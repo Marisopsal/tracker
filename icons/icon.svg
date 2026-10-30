@@ -2,40 +2,40 @@
   <defs>
     <linearGradient id="bakgrunn" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#E8E8EE"/>
+      <stop offset="1" stop-color="#E9EEE8"/>
     </linearGradient>
-    <linearGradient id="oransje" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFB340"/>
-      <stop offset="1" stop-color="#FF8A00"/>
+    <linearGradient id="terrakotta" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DB825C"/>
+      <stop offset="1" stop-color="#B9592F"/>
     </linearGradient>
-    <linearGradient id="indigo" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7D7AFF"/>
-      <stop offset="1" stop-color="#4F4CCB"/>
+    <linearGradient id="plomme" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9C6689"/>
+      <stop offset="1" stop-color="#6E3E5F"/>
     </linearGradient>
     <linearGradient id="gronn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5EE07F"/>
-      <stop offset="1" stop-color="#2DB84F"/>
+      <stop offset="0" stop-color="#5DB98B"/>
+      <stop offset="1" stop-color="#2F6B4E"/>
     </linearGradient>
-    <linearGradient id="gra" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#E5E5EA"/>
-      <stop offset="1" stop-color="#D4D4DA"/>
+    <linearGradient id="salvie" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E4EBE2"/>
+      <stop offset="1" stop-color="#D2DDD0"/>
     </linearGradient>
     <filter id="skygge" x="-40%" y="-40%" width="180%" height="180%">
-      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000" flood-opacity=".14"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1E3A2C" flood-opacity=".16"/>
     </filter>
   </defs>
   <rect width="512" height="512" fill="url(#bakgrunn)"/>
   <g>
-    <circle cx="132" cy="132" r="46" fill="url(#gra)"/>
-    <circle cx="256" cy="132" r="46" fill="url(#gra)"/>
-    <circle cx="132" cy="256" r="46" fill="url(#gra)"/>
-    <circle cx="380" cy="256" r="46" fill="url(#gra)"/>
-    <circle cx="132" cy="380" r="46" fill="url(#gra)"/>
-    <circle cx="380" cy="380" r="46" fill="url(#gra)"/>
+    <circle cx="132" cy="132" r="46" fill="url(#salvie)"/>
+    <circle cx="256" cy="132" r="46" fill="url(#salvie)"/>
+    <circle cx="132" cy="256" r="46" fill="url(#salvie)"/>
+    <circle cx="380" cy="256" r="46" fill="url(#salvie)"/>
+    <circle cx="132" cy="380" r="46" fill="url(#salvie)"/>
+    <circle cx="380" cy="380" r="46" fill="url(#salvie)"/>
   </g>
   <g filter="url(#skygge)">
-    <circle cx="380" cy="132" r="46" fill="url(#oransje)"/>
-    <circle cx="256" cy="380" r="46" fill="url(#indigo)"/>
+    <circle cx="380" cy="132" r="46" fill="url(#terrakotta)"/>
+    <circle cx="256" cy="380" r="46" fill="url(#plomme)"/>
     <circle cx="256" cy="256" r="46" fill="url(#gronn)"/>
   </g>
   <path d="M233 257l16 16 30-32" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>

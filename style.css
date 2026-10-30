@@ -19,10 +19,10 @@
   --tekst-3: rgba(60, 60, 67, .3);
   --skille: rgba(60, 60, 67, .29);
 
-  /* Signalfarger */
-  --tint: #007AFF;
+  /* Signalfarger: skoggrønn hovedfarge og jadegrønn hake for «ingen vondt» */
+  --tint: #2E6B4F;
   --fare: #FF3B30;
-  --gronn: #34C759;
+  --gronn: #3A9A6C;
 
   /* Glass */
   --glass: rgba(255, 255, 255, .72);
@@ -32,19 +32,25 @@
   --glass-lys: rgba(255, 255, 255, .9);
   --glass-skygge: 0 10px 30px rgba(0, 0, 0, .1), 0 1px 3px rgba(0, 0, 0, .06);
 
-  /* Kategorifarger (iPhone-systemfarger) */
-  --c-red: #FF3B30;
-  --c-orange: #FF9500;
-  --c-yellow: #FFCC00;
-  --c-mint: #00C7BE;
-  --c-teal: #30B0C7;
-  --c-cyan: #32ADE6;
-  --c-blue: #007AFF;
-  --c-indigo: #5856D6;
-  --c-purple: #AF52DE;
-  --c-pink: #FF2D55;
-  --c-brown: #A2845E;
-  --c-gray: #8E8E93;
+  /* Kategorifarger: dempede naturfarger */
+  --c-salvie: #8AA886;
+  --c-eukalyptus: #5E9A8B;
+  --c-mose: #6D8A3C;
+  --c-oliven: #8C8A3D;
+  --c-jade: #3A9A6C;
+  --c-skog: #2F6B4E;
+  --c-sand: #CBAE84;
+  --c-terrakotta: #C4663F;
+  --c-fersken: #E6A07F;
+  --c-sennep: #C99F37;
+  --c-plomme: #7D4A6D;
+  --c-lavendel: #9689C2;
+  --c-stovbla: #6E8FAD;
+  --c-hav: #2F6F8E;
+  --c-rosa: #C77B8C;
+  --c-rust: #A5552F;
+  --c-skifer: #6B7985;
+  --c-grafitt: #4B5056;
 
   /* Skrift og bevegelse */
   --skrift: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Helvetica Neue", Arial, sans-serif;
@@ -66,27 +72,33 @@
     --tekst-2: rgba(235, 235, 245, .6);
     --tekst-3: rgba(235, 235, 245, .3);
     --skille: rgba(84, 84, 88, .65);
-    --tint: #0A84FF;
+    --tint: #3FA072;
     --fare: #FF453A;
-    --gronn: #30D158;
+    --gronn: #52C08A;
     --glass: rgba(44, 44, 46, .6);
     --glass-tett: rgba(44, 44, 46, .88);
     --glass-linje: rgba(22, 22, 24, .82);
     --glass-kant: rgba(255, 255, 255, .14);
     --glass-lys: rgba(255, 255, 255, .1);
     --glass-skygge: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .3);
-    --c-red: #FF453A;
-    --c-orange: #FF9F0A;
-    --c-yellow: #FFD60A;
-    --c-mint: #63E6E2;
-    --c-teal: #40CBE0;
-    --c-cyan: #64D2FF;
-    --c-blue: #0A84FF;
-    --c-indigo: #5E5CE6;
-    --c-purple: #BF5AF2;
-    --c-pink: #FF375F;
-    --c-brown: #AC8E68;
-    --c-gray: #8E8E93;
+    --c-salvie: #9DBC99;
+    --c-eukalyptus: #72B2A2;
+    --c-mose: #88A653;
+    --c-oliven: #A7A457;
+    --c-jade: #4FB584;
+    --c-skog: #4A8D6B;
+    --c-sand: #D7BD95;
+    --c-terrakotta: #D97B52;
+    --c-fersken: #EDB093;
+    --c-sennep: #D9B24E;
+    --c-plomme: #A06890;
+    --c-lavendel: #AEA2D8;
+    --c-stovbla: #86A6C3;
+    --c-hav: #4C8FB0;
+    --c-rosa: #D8919F;
+    --c-rust: #C36E45;
+    --c-skifer: #8795A1;
+    --c-grafitt: #8C9298;
     color-scheme: dark;
   }
 }
@@ -102,27 +114,33 @@
   --tekst-2: rgba(235, 235, 245, .6);
   --tekst-3: rgba(235, 235, 245, .3);
   --skille: rgba(84, 84, 88, .65);
-  --tint: #0A84FF;
+  --tint: #3FA072;
   --fare: #FF453A;
-  --gronn: #30D158;
+  --gronn: #52C08A;
   --glass: rgba(44, 44, 46, .6);
   --glass-tett: rgba(44, 44, 46, .88);
   --glass-linje: rgba(22, 22, 24, .82);
   --glass-kant: rgba(255, 255, 255, .14);
   --glass-lys: rgba(255, 255, 255, .1);
   --glass-skygge: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .3);
-  --c-red: #FF453A;
-  --c-orange: #FF9F0A;
-  --c-yellow: #FFD60A;
-  --c-mint: #63E6E2;
-  --c-teal: #40CBE0;
-  --c-cyan: #64D2FF;
-  --c-blue: #0A84FF;
-  --c-indigo: #5E5CE6;
-  --c-purple: #BF5AF2;
-  --c-pink: #FF375F;
-  --c-brown: #AC8E68;
-  --c-gray: #8E8E93;
+  --c-salvie: #9DBC99;
+  --c-eukalyptus: #72B2A2;
+  --c-mose: #88A653;
+  --c-oliven: #A7A457;
+  --c-jade: #4FB584;
+  --c-skog: #4A8D6B;
+  --c-sand: #D7BD95;
+  --c-terrakotta: #D97B52;
+  --c-fersken: #EDB093;
+  --c-sennep: #D9B24E;
+  --c-plomme: #A06890;
+  --c-lavendel: #AEA2D8;
+  --c-stovbla: #86A6C3;
+  --c-hav: #4C8FB0;
+  --c-rosa: #D8919F;
+  --c-rust: #C36E45;
+  --c-skifer: #8795A1;
+  --c-grafitt: #8C9298;
   color-scheme: dark;
 }
 
@@ -335,6 +353,8 @@ h1 {
   gap: 12px;
 }
 
+/* En rute er en av/på-knapp, som i Kontrollsenter.
+   Av: lyst kort med en farget sirkel. På: hele ruten fylt med kategorifargen. */
 .rute {
   position: relative;
   display: flex;
@@ -347,11 +367,23 @@ h1 {
   border: 0;
   border-radius: 26px;
   overflow: hidden;
-  color: #FFFFFF;
+  background: var(--kort);
+  color: var(--tekst);
   text-align: left;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+  transition: transform .5s var(--fjaer), color .25s ease, box-shadow .35s ease;
+}
+
+/* Fargen som fyller ruten når den er på. Den vokser ut fra midten. */
+.rute::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: linear-gradient(172deg, var(--farge) 0%, color-mix(in srgb, var(--farge) 68%, #000) 100%);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 10px 24px color-mix(in srgb, var(--farge) 30%, transparent);
-  transition: transform .5s var(--fjaer);
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity .25s ease, transform .55s var(--fjaer);
 }
 
 /* Lys glans øverst, som på glass */
@@ -362,19 +394,30 @@ h1 {
   border-radius: inherit;
   background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0) 46%);
   box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .25);
+  opacity: 0;
+  transition: opacity .3s ease;
   pointer-events: none;
 }
 
 .rute > * { position: relative; z-index: 1; }
 
+.rute.paa {
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 10px 24px color-mix(in srgb, var(--farge) 32%, transparent);
+}
+
+.rute.paa::before,
+.rute.paa::after { opacity: 1; transform: none; }
+
+.rute.lys::before {
+  background: linear-gradient(172deg, color-mix(in srgb, var(--farge) 78%, #FFF) 0%, var(--farge) 100%);
+}
+
+.rute.paa.lys { color: rgba(0, 0, 0, .85); }
+
 .rute:active {
   transform: scale(.95);
   transition-duration: .15s;
-}
-
-.rute.lys {
-  color: rgba(0, 0, 0, .85);
-  background: linear-gradient(172deg, color-mix(in srgb, var(--farge) 78%, #FFF) 0%, var(--farge) 100%);
 }
 
 /* Har du et oddetall ruter, blir den siste bred. */
@@ -389,10 +432,14 @@ h1 {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .26);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--farge) 82%, #FFF), var(--farge));
+  color: #FFFFFF;
+  transition: background .3s ease;
 }
 
-.rute.lys .rute-ikon { background: rgba(0, 0, 0, .08); }
+.rute.lys .rute-ikon { color: rgba(0, 0, 0, .78); }
+.rute.paa .rute-ikon { background: rgba(255, 255, 255, .26); color: inherit; }
+.rute.paa.lys .rute-ikon { background: rgba(0, 0, 0, .08); }
 
 .rute-ikon svg {
   grid-area: 1 / 1;
@@ -403,10 +450,10 @@ h1 {
 }
 
 .rute-ikon .ikon-hake { opacity: 0; transform: scale(.3); }
+.rute.paa .ikon-pluss { opacity: 0; transform: scale(.3) rotate(90deg); }
+.rute.paa .ikon-hake { opacity: 1; transform: none; }
 
-.rute.registrert { animation: rute-dunk .55s var(--fjaer); }
-.rute.registrert .ikon-pluss { opacity: 0; transform: scale(.3) rotate(90deg); }
-.rute.registrert .ikon-hake { opacity: 1; transform: none; }
+.rute.dunk { animation: rute-dunk .55s var(--fjaer); }
 
 @keyframes rute-dunk {
   0% { transform: scale(.94); }
@@ -426,13 +473,15 @@ h1 {
 .rute-hint {
   display: block;
   margin-top: 1px;
+  color: var(--tekst-2);
   font-size: 15px;
   line-height: 20px;
   font-weight: 600;
   letter-spacing: -.016em;
-  opacity: .9;
   font-variant-numeric: tabular-nums;
 }
+
+.rute.paa .rute-hint { color: inherit; opacity: .9; }
 
 .tintknapp {
   display: inline-flex;

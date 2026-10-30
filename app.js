@@ -6,42 +6,68 @@
 
 // Det du følger med på når appen tas i bruk. Flere kan legges til i appen under Innstillinger.
 const STANDARDKATEGORIER = [
-  { id: 'mage', navn: 'Magen', farge: 'orange' },
-  { id: 'hode', navn: 'Hodet', farge: 'indigo' },
+  { id: 'mage', navn: 'Magen', farge: 'terrakotta' },
+  { id: 'hode', navn: 'Hodet', farge: 'plomme' },
 ];
 
-// Fargene du kan velge mellom. Selve fargene står i style.css (--c-…), med egne nyanser for mørk modus.
+// Fargene du kan velge mellom: dempede naturfarger, med seks grønntoner først.
+// Selve fargene står i style.css (--c-…), med egne nyanser for mørk modus.
 // «lys» betyr at teksten oppå fargen skal være mørk, så den er lett å lese.
 const FARGER = [
-  { id: 'red', navn: 'Rød' },
-  { id: 'orange', navn: 'Oransje' },
-  { id: 'yellow', navn: 'Gul', lys: true },
-  { id: 'mint', navn: 'Mint', lys: true },
-  { id: 'teal', navn: 'Turkis' },
-  { id: 'cyan', navn: 'Cyan', lys: true },
-  { id: 'blue', navn: 'Blå' },
-  { id: 'indigo', navn: 'Indigo' },
-  { id: 'purple', navn: 'Lilla' },
-  { id: 'pink', navn: 'Rosa' },
-  { id: 'brown', navn: 'Brun' },
-  { id: 'gray', navn: 'Grå' },
+  { id: 'salvie', navn: 'Salvie' },
+  { id: 'eukalyptus', navn: 'Eukalyptus' },
+  { id: 'mose', navn: 'Mose' },
+  { id: 'oliven', navn: 'Oliven' },
+  { id: 'jade', navn: 'Jade' },
+  { id: 'skog', navn: 'Skog' },
+  { id: 'sand', navn: 'Sand', lys: true },
+  { id: 'terrakotta', navn: 'Terrakotta' },
+  { id: 'fersken', navn: 'Fersken', lys: true },
+  { id: 'sennep', navn: 'Sennep', lys: true },
+  { id: 'plomme', navn: 'Plomme' },
+  { id: 'lavendel', navn: 'Lavendel' },
+  { id: 'stovbla', navn: 'Støvblå' },
+  { id: 'hav', navn: 'Hav' },
+  { id: 'rosa', navn: 'Rosa' },
+  { id: 'rust', navn: 'Rust' },
+  { id: 'skifer', navn: 'Skifer' },
+  { id: 'grafitt', navn: 'Grafitt' },
 ];
 
-// Rekkefølgen appen foreslår farger i for en ny kategori.
-const FARGEFORSLAG = ['teal', 'pink', 'blue', 'yellow', 'purple', 'mint', 'cyan', 'red', 'brown', 'gray', 'orange', 'indigo'];
+// Rekkefølgen appen foreslår farger i for en ny kategori. Grønntonene først.
+const FARGEFORSLAG = [
+  'salvie', 'jade', 'eukalyptus', 'mose', 'oliven', 'skog', 'hav', 'sennep', 'lavendel',
+  'rosa', 'stovbla', 'sand', 'fersken', 'rust', 'skifer', 'grafitt', 'terrakotta', 'plomme',
+];
 
-// Fargekoder fra tidligere versjoner av appen, og hvilken farge de blir nå.
+// Farger fra tidligere versjoner av appen, og hvilken farge de blir nå.
 const GAMLE_FARGER = {
-  '#E8833A': 'orange',
-  '#7B6CF0': 'indigo',
-  '#2A9D8F': 'teal',
-  '#D9577C': 'pink',
-  '#3D8BD9': 'blue',
-  '#C9A227': 'yellow',
-  '#9A6B4F': 'brown',
-  '#6B7A8F': 'gray',
-  '#9A948C': 'gray',
+  // Fargekoder fra den første versjonen
+  '#E8833A': 'terrakotta',
+  '#7B6CF0': 'plomme',
+  '#2A9D8F': 'eukalyptus',
+  '#D9577C': 'rosa',
+  '#3D8BD9': 'stovbla',
+  '#C9A227': 'sennep',
+  '#9A6B4F': 'rust',
+  '#6B7A8F': 'skifer',
+  '#9A948C': 'skifer',
+  // Fargenavn fra iPhone-fargene som var med i en prøveversjon
+  red: 'rust',
+  orange: 'terrakotta',
+  yellow: 'sennep',
+  mint: 'salvie',
+  teal: 'eukalyptus',
+  cyan: 'hav',
+  blue: 'stovbla',
+  indigo: 'plomme',
+  purple: 'lavendel',
+  pink: 'rosa',
+  brown: 'sand',
+  gray: 'skifer',
 };
+
+const UKJENT_FARGE = 'skifer';
 
 const LAGRINGSNOKKEL = 'dagbok-data';
 const DATAVERSJON = 1;
@@ -83,7 +109,10 @@ function forsteIMaaned(dato) {
 // Gjør om en lagret farge (navn eller gammel fargekode) til et av fargenavnene over.
 function fargenavn(verdi) {
   if (FARGER.some((f) => f.id === verdi)) return verdi;
-  return GAMLE_FARGER[String(verdi).toUpperCase()] ?? 'gray';
+  for (const nokkel of [String(verdi), String(verdi).toUpperCase()]) {
+    if (Object.hasOwn(GAMLE_FARGER, nokkel)) return GAMLE_FARGER[nokkel];
+  }
+  return UKJENT_FARGE;
 }
 
 const fargeVar = (id) => `var(--c-${id})`;
@@ -135,7 +164,7 @@ function normaliser(raadata) {
   // En registrering med en ukjent kategori får en grå kategori, så ingenting forsvinner.
   for (const r of registreringer) {
     if (!kategorier.some((k) => k.id === r.kategori)) {
-      kategorier.push({ id: r.kategori, navn: storForbokstav(r.kategori), farge: 'gray' });
+      kategorier.push({ id: r.kategori, navn: storForbokstav(r.kategori), farge: UKJENT_FARGE });
     }
   }
   if (!kategorier.some((k) => !k.skjult)) delete kategorier[0].skjult;
@@ -191,7 +220,7 @@ let data = lesData();
 // ============================================================
 
 function kategoriFor(id) {
-  return data.kategorier.find((k) => k.id === id) ?? { id, navn: id, farge: 'gray' };
+  return data.kategorier.find((k) => k.id === id) ?? { id, navn: id, farge: UKJENT_FARGE };
 }
 
 // Kategoriene som har rute på startsiden.
@@ -490,30 +519,74 @@ function renderIdag() {
   );
 }
 
+// En rute er en av/på-knapp: på når kategorien er registrert i dag.
 function rute(kategori, registreringerIdag) {
-  const antall = registreringerIdag.filter((r) => r.kategori === kategori.id).length;
+  const egne = registreringerIdag.filter((r) => r.kategori === kategori.id);
+  const paa = egne.length > 0;
+  const tid = paa ? klokke(new Date(egne[0].tid)) : null;
+  let status = 'Ikke registrert';
+  let skjermleser = `${kategori.navn}, ikke registrert i dag. Trykk for å registrere.`;
+  if (egne.length === 1) {
+    status = `Registrert ${tid}`;
+    skjermleser = `${kategori.navn}, registrert i dag kl. ${tid}. Trykk for å fjerne.`;
+  } else if (egne.length > 1) {
+    status = `Registrert ${egne.length} ganger`;
+    skjermleser = `${kategori.navn}, registrert ${egne.length} ganger i dag. Trykk for å fjerne.`;
+  }
+
   return el('button', {
-    class: erLysFarge(kategori.farge) ? 'rute lys' : 'rute',
+    class: ['rute', paa && 'paa', erLysFarge(kategori.farge) && 'lys'].filter(Boolean).join(' '),
     style: fargeStil(kategori.farge),
     'data-kategori': kategori.id,
-    'aria-label': `${kategori.navn}, ${antall ? `${antall} i dag` : 'ingen i dag'}. Trykk for å registrere nå.`,
-    onclick: () => hurtigRegistrer(kategori),
+    'aria-pressed': String(paa),
+    'aria-label': skjermleser,
+    onclick: () => vekslePaaAv(kategori),
   },
   el('span', { class: 'rute-ikon' }, ikon('pluss', 'ikon-pluss'), ikon('hake', 'ikon-hake')),
   el('span', {},
     el('span', { class: 'rute-navn' }, kategori.navn),
-    el('span', { class: 'rute-hint' }, antall ? `${antall} i dag` : 'Ingen i dag')));
+    el('span', { class: 'rute-hint' }, status)));
 }
 
-function hurtigRegistrer(kategori) {
+// Lar ruten gli fra forrige tilstand til den nye, med et lite fjærende dunk.
+function animerRute(kategoriId, paa) {
+  const ruten = $(`.rute[data-kategori="${CSS.escape(kategoriId)}"]`);
+  if (!ruten) return;
+  ruten.classList.toggle('paa', !paa);
+  void ruten.offsetWidth; // start fra forrige tilstand, så overgangen synes
+  ruten.classList.toggle('paa', paa);
+  ruten.classList.add('dunk');
+  setTimeout(() => ruten.classList.remove('dunk'), 600);
+}
+
+// Ett trykk registrerer. Ett trykk til fjerner dagens registrering i kategorien.
+function vekslePaaAv(kategori) {
   haptisk();
+  const dagens = registreringerPaa(datoNokkel(new Date())).filter((r) => r.kategori === kategori.id);
+
+  if (dagens.length) {
+    const kopier = dagens.map((r) => ({ ...r }));
+    data.registreringer = data.registreringer.filter((r) => !dagens.includes(r));
+    lagre();
+    render();
+    animerRute(kategori.id, false);
+    visMelding(`${kategori.navn} fjernet for i dag`, [{
+      tekst: 'Angre',
+      handling: () => {
+        data.registreringer.push(...kopier);
+        lagre();
+        render();
+        animerRute(kategori.id, true);
+        visMelding('Angret');
+      },
+    }]);
+    return;
+  }
+
   const naa = new Date();
   const registrering = leggTil(kategori.id, naa);
-
   render();
-  const ruten = $(`.rute[data-kategori="${CSS.escape(kategori.id)}"]`);
-  ruten?.classList.add('registrert');
-  setTimeout(() => ruten?.classList.remove('registrert'), 1400);
+  animerRute(kategori.id, true);
 
   visMelding(`${kategori.navn} registrert kl. ${klokke(naa)}`, [
     { tekst: 'Notat', handling: () => apneNotat(registrering.id) },
@@ -522,6 +595,7 @@ function hurtigRegistrer(kategori) {
       handling: () => {
         slett(registrering.id);
         render();
+        animerRute(kategori.id, false);
         visMelding('Angret');
       },
     },
