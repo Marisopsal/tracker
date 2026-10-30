@@ -6,23 +6,42 @@
 
 // Det du følger med på når appen tas i bruk. Flere kan legges til i appen under Innstillinger.
 const STANDARDKATEGORIER = [
-  { id: 'mage', navn: 'Magen', farge: '#E8833A' },
-  { id: 'hode', navn: 'Hodet', farge: '#7B6CF0' },
+  { id: 'mage', navn: 'Magen', farge: 'orange' },
+  { id: 'hode', navn: 'Hodet', farge: 'indigo' },
 ];
 
-// Fargene du kan velge mellom for en kategori.
+// Fargene du kan velge mellom. Selve fargene står i style.css (--c-…), med egne nyanser for mørk modus.
+// «lys» betyr at teksten oppå fargen skal være mørk, så den er lett å lese.
 const FARGER = [
-  { farge: '#E8833A', navn: 'Oransje' },
-  { farge: '#7B6CF0', navn: 'Lilla' },
-  { farge: '#2A9D8F', navn: 'Turkis' },
-  { farge: '#D9577C', navn: 'Rosa' },
-  { farge: '#3D8BD9', navn: 'Blå' },
-  { farge: '#C9A227', navn: 'Gul' },
-  { farge: '#9A6B4F', navn: 'Brun' },
-  { farge: '#6B7A8F', navn: 'Grå' },
+  { id: 'red', navn: 'Rød' },
+  { id: 'orange', navn: 'Oransje' },
+  { id: 'yellow', navn: 'Gul', lys: true },
+  { id: 'mint', navn: 'Mint', lys: true },
+  { id: 'teal', navn: 'Turkis' },
+  { id: 'cyan', navn: 'Cyan', lys: true },
+  { id: 'blue', navn: 'Blå' },
+  { id: 'indigo', navn: 'Indigo' },
+  { id: 'purple', navn: 'Lilla' },
+  { id: 'pink', navn: 'Rosa' },
+  { id: 'brown', navn: 'Brun' },
+  { id: 'gray', navn: 'Grå' },
 ];
 
-const UKJENT_FARGE = '#9A948C';
+// Rekkefølgen appen foreslår farger i for en ny kategori.
+const FARGEFORSLAG = ['teal', 'pink', 'blue', 'yellow', 'purple', 'mint', 'cyan', 'red', 'brown', 'gray', 'orange', 'indigo'];
+
+// Fargekoder fra tidligere versjoner av appen, og hvilken farge de blir nå.
+const GAMLE_FARGER = {
+  '#E8833A': 'orange',
+  '#7B6CF0': 'indigo',
+  '#2A9D8F': 'teal',
+  '#D9577C': 'pink',
+  '#3D8BD9': 'blue',
+  '#C9A227': 'yellow',
+  '#9A6B4F': 'brown',
+  '#6B7A8F': 'gray',
+  '#9A948C': 'gray',
+};
 
 const LAGRINGSNOKKEL = 'dagbok-data';
 const DATAVERSJON = 1;
@@ -56,6 +75,19 @@ function klokke(dato) {
 function forsteIMaaned(dato) {
   return new Date(dato.getFullYear(), dato.getMonth(), 1);
 }
+
+// ============================================================
+// Farger
+// ============================================================
+
+// Gjør om en lagret farge (navn eller gammel fargekode) til et av fargenavnene over.
+function fargenavn(verdi) {
+  if (FARGER.some((f) => f.id === verdi)) return verdi;
+  return GAMLE_FARGER[String(verdi).toUpperCase()] ?? 'gray';
+}
+
+const fargeVar = (id) => `var(--c-${id})`;
+const erLysFarge = (id) => FARGER.find((f) => f.id === id)?.lys === true;
 
 // ============================================================
 // Lagring – alt ligger bare i telefonens eget lager
@@ -93,17 +125,17 @@ function normaliser(raadata) {
 
   const kategorier = [];
   for (const k of Array.isArray(raadata.kategorier) ? raadata.kategorier : []) {
-    const gyldig = k && typeof k.id === 'string' && typeof k.navn === 'string' && /^#[0-9a-fA-F]{6}$/.test(k.farge);
+    const gyldig = k && typeof k.id === 'string' && typeof k.navn === 'string';
     if (!gyldig || kategorier.some((annen) => annen.id === k.id)) continue;
-    kategorier.push(k.skjult === true
-      ? { id: k.id, navn: k.navn, farge: k.farge, skjult: true }
-      : { id: k.id, navn: k.navn, farge: k.farge });
+    const kategori = { id: k.id, navn: k.navn, farge: fargenavn(k.farge) };
+    if (k.skjult === true) kategori.skjult = true;
+    kategorier.push(kategori);
   }
   if (kategorier.length === 0) kategorier.push(...STANDARDKATEGORIER.map((k) => ({ ...k })));
   // En registrering med en ukjent kategori får en grå kategori, så ingenting forsvinner.
   for (const r of registreringer) {
     if (!kategorier.some((k) => k.id === r.kategori)) {
-      kategorier.push({ id: r.kategori, navn: storForbokstav(r.kategori), farge: UKJENT_FARGE });
+      kategorier.push({ id: r.kategori, navn: storForbokstav(r.kategori), farge: 'gray' });
     }
   }
   if (!kategorier.some((k) => !k.skjult)) delete kategorier[0].skjult;
@@ -159,10 +191,10 @@ let data = lesData();
 // ============================================================
 
 function kategoriFor(id) {
-  return data.kategorier.find((k) => k.id === id) ?? { id, navn: id, farge: UKJENT_FARGE };
+  return data.kategorier.find((k) => k.id === id) ?? { id, navn: id, farge: 'gray' };
 }
 
-// Kategoriene som har knapp på startsiden.
+// Kategoriene som har rute på startsiden.
 function aktiveKategorier() {
   return data.kategorier.filter((k) => !k.skjult);
 }
@@ -238,6 +270,8 @@ function slett(id) {
 
 const $ = (velger) => document.querySelector(velger);
 
+const redusertBevegelse = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // Lager et HTML-element: el('button', { class: 'x', onclick: ... }, 'Tekst')
 function el(tag, egenskaper = {}, ...barn) {
   const element = document.createElement(tag);
@@ -254,7 +288,71 @@ function el(tag, egenskaper = {}, ...barn) {
   return element;
 }
 
-const prikk = (kategori) => el('span', { class: 'prikk', style: `--farge:${kategori.farge}`, 'aria-hidden': 'true' });
+// Små symboler, tegnet med streker.
+const IKONER = {
+  pil: '<path d="M9.5 5.5L16 12l-6.5 6.5"/>',
+  venstre: '<path d="M14.5 5.5L8 12l6.5 6.5"/>',
+  hake: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  pluss: '<path d="M12 5v14M5 12h14"/>',
+  kryss: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  klokke: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+  plussSirkel: '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M12 7.5v9M7.5 12h9" style="stroke:var(--kort)"/>',
+  del: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M8.5 10.5H7a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6.5a2 2 0 0 0-2-2h-1.5"/>',
+};
+
+function ikon(navn, klasse = '') {
+  const mal = document.createElement('template');
+  mal.innerHTML = `<svg class="${klasse}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" `
+    + `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IKONER[navn]}</svg>`;
+  return mal.content.firstChild;
+}
+
+const forbokstav = (navn) => ([...navn.trim()][0] ?? '').toUpperCase();
+const fargeStil = (farge) => `--farge:${fargeVar(farge)}`;
+
+const prikk = (kategori) => el('span', { class: 'prikk', style: fargeStil(kategori.farge), 'aria-hidden': 'true' });
+
+// Farget firkant med forbokstav, som ikonene i Innstillinger.
+function kategoriIkon(kategori) {
+  return el('span', {
+    class: erLysFarge(kategori.farge) ? 'kat-ikon lys' : 'kat-ikon',
+    style: fargeStil(kategori.farge),
+    'aria-hidden': 'true',
+  }, forbokstav(kategori.navn));
+}
+
+// En gruppe som i Innstillinger: liten overskrift, rader i et kort og en liten forklaring under.
+function gruppe({ tittel, fot, klasse, kortKlasse, etikett } = {}, ...rader) {
+  const innhold = rader.flat(Infinity).filter(Boolean);
+  return el('section', { class: klasse ? `gruppe ${klasse}` : 'gruppe', 'aria-label': etikett },
+    tittel ? el('h2', { class: 'gruppe-tittel' }, tittel) : null,
+    innhold.length ? el('div', { class: kortKlasse ? `gruppe-kort ${kortKlasse}` : 'gruppe-kort' }, innhold) : null,
+    fot ? el('p', { class: 'gruppe-fot' }, fot) : null);
+}
+
+// En rad: ikon til venstre, tekst og undertekst, verdi til høyre, og pil eller hake.
+function rad({ ikon: radIkon, tekst, undertekst, verdi, pil, valgt, klasse, onclick, aria, id } = {}) {
+  const klasser = ['rad', radIkon && 'med-ikon', klasse].filter(Boolean).join(' ');
+  return el(onclick ? 'button' : 'div', {
+    class: klasser,
+    type: onclick ? 'button' : null,
+    id,
+    onclick,
+    'aria-label': aria,
+    'aria-pressed': valgt == null ? null : String(valgt),
+  },
+  radIkon,
+  el('span', { class: 'rad-tekst' }, el('span', {}, tekst), undertekst ? el('span', { class: 'rad-under' }, undertekst) : null),
+  verdi != null ? el('span', { class: 'rad-verdi' }, verdi) : null,
+  valgt != null ? el('span', { class: 'rad-hake', 'aria-hidden': 'true' }, ikon('hake')) : null,
+  pil ? el('span', { class: 'rad-pil', 'aria-hidden': 'true' }, ikon('pil')) : null);
+}
+
+// Et lite dunk i hånden. iPhone (iOS 18 og nyere) gir det når en bryter slås av eller på.
+function haptisk() {
+  $('#haptikk')?.click();
+  navigator.vibrate?.(8);
+}
 
 let meldingTimer;
 
@@ -273,29 +371,66 @@ function skjulMelding() {
   $('#toast').classList.remove('vis');
 }
 
-const ark = $('#ark');
+// ============================================================
+// Ark som glir opp nedenfra, og varsel midt på skjermen
+// ============================================================
 
-function apneArk(...innhold) {
-  ark.replaceChildren(el('div', { class: 'ark-innhold' }, innhold));
-  if (!ark.open) ark.showModal();
+const ark = $('#ark');
+let lukkTimer;
+
+// Åpner arket med ✕ til venstre, tittel i midten og en blå ✓ til høyre hvis noe skal lagres.
+function apneArk({ tittel, lukk = lukkArk, lagre: vedLagring = null }, ...innhold) {
+  clearTimeout(lukkTimer);
+  ark.classList.remove('lukker');
+  ark.replaceChildren(el('div', { class: 'ark-innhold' },
+    el('header', { class: 'ark-hode' },
+      el('button', {
+        class: 'rundknapp glass', id: 'ark-lukk', 'aria-label': vedLagring ? 'Avbryt' : 'Lukk', onclick: lukk,
+      }, ikon('kryss')),
+      el('h2', {}, tittel),
+      vedLagring
+        ? el('button', { class: 'rundknapp bekreft', id: 'ark-lagre', 'aria-label': 'Lagre', onclick: vedLagring }, ikon('hake'))
+        : el('span')),
+    innhold));
+
+  if (!ark.open) {
+    document.documentElement.style.setProperty('--skala-origo', `${window.scrollY + window.innerHeight / 2}px`);
+    ark.showModal();
+    document.documentElement.classList.add('ark-apen');
+  }
+  ark.scrollTop = 0;
 }
 
 function lukkArk() {
-  ark.close();
+  if (!ark.open) return;
+  document.documentElement.classList.remove('ark-apen');
+  if (redusertBevegelse()) { ark.close(); return; }
+  ark.classList.add('lukker');
+  lukkTimer = setTimeout(() => ark.close(), 230);
 }
 
-// Trykk utenfor arket lukker det.
+ark.addEventListener('close', () => {
+  ark.classList.remove('lukker');
+  document.documentElement.classList.remove('ark-apen');
+});
+
+// Escape og trykk utenfor arket lukker det med animasjon.
+ark.addEventListener('cancel', (e) => { e.preventDefault(); lukkArk(); });
 ark.addEventListener('click', (e) => { if (e.target === ark) lukkArk(); });
 
-// Spør i arket før noe som ikke kan angres. Gir true for ja og false for avbryt.
-function bekreft({ tittel, tekst, ja }) {
+const varsel = $('#varsel');
+
+// Spør før noe som ikke kan angres. Gir true for ja og false for avbryt.
+function bekreft({ tittel, tekst, ja, fare = false }) {
   return new Promise((svar) => {
-    apneArk(
+    const velg = (verdi) => { varsel.close(); svar(verdi); };
+    varsel.replaceChildren(
       el('h2', {}, tittel),
       el('p', {}, tekst),
-      el('button', { class: 'primaer', onclick: () => svar(true) }, ja),
-      el('button', { class: 'sekundaer', onclick: () => svar(false) }, 'Avbryt'),
-    );
+      el('div', { class: 'varsel-knapper' },
+        el('button', { onclick: () => velg(false) }, 'Avbryt'),
+        el('button', { class: fare ? 'fare' : null, onclick: () => velg(true) }, ja)));
+    varsel.showModal();
   });
 }
 
@@ -312,10 +447,13 @@ const tilstand = {
 
 function render() {
   const erIdag = tilstand.visning === 'idag';
+  const tittel = erIdag ? 'I dag' : 'Kalender';
   $('#vis-idag').hidden = !erIdag;
   $('#vis-kalender').hidden = erIdag;
-  $('#tittel').textContent = erIdag ? 'I dag' : 'Kalender';
-  for (const fane of document.querySelectorAll('.faner button')) {
+  $('#tittel').textContent = tittel;
+  $('#navlinje-tittel').textContent = tittel;
+  $('#overtittel').textContent = erIdag ? fmtDag.format(new Date()) : '';
+  for (const fane of document.querySelectorAll('.fanelinje button')) {
     if (fane.dataset.visning === tilstand.visning) fane.setAttribute('aria-current', 'page');
     else fane.removeAttribute('aria-current');
   }
@@ -328,48 +466,57 @@ function render() {
 // ============================================================
 
 function renderIdag() {
-  const naa = new Date();
-  const nokkel = datoNokkel(naa);
-  const registreringer = registreringerPaa(nokkel);
+  const registreringer = registreringerPaa(datoNokkel(new Date()));
   const rot = $('#vis-idag');
-
-  rot.replaceChildren(el('p', { class: 'dato' }, storForbokstav(fmtDag.format(naa))));
+  rot.replaceChildren();
 
   if (visInstallasjonstips()) {
-    rot.append(el('p', { class: 'tips' },
-      el('strong', {}, 'Legg Dagbok på Hjem-skjermen'),
-      'Trykk på Del-knappen i Safari (firkanten med pil opp) og velg «Legg til på Hjem-skjerm». ',
-      'Bruk alltid ikonet etterpå – det du registrerer her i Safari blir ikke med.'));
+    rot.append(el('div', { class: 'tips' },
+      ikon('del'),
+      el('p', {},
+        el('strong', {}, 'Legg Dagbok på Hjem-skjermen'),
+        'Trykk på Del-knappen i Safari og velg «Legg til på Hjem-skjerm». ',
+        'Bruk alltid ikonet etterpå. Det du registrerer her i Safari blir ikke med.')));
   }
 
-  // Med mange kategorier blir knappene litt lavere, så alle får plass.
-  const aktive = aktiveKategorier();
-  rot.append(el('div', { class: aktive.length > 2 ? 'store-knapper mange' : 'store-knapper' }, aktive.map((k) =>
-    el('button', {
-      class: 'stor-knapp',
-      style: `--farge:${k.farge}`,
-      'data-kategori': k.id,
-      onclick: () => hurtigRegistrer(k),
-    },
-    el('span', { class: 'prikk', 'aria-hidden': 'true' }),
-    el('span', {}, el('span', { class: 'navn' }, k.navn), el('span', { class: 'hint' }, 'Trykk for å registrere nå'))))));
+  rot.append(
+    el('div', { class: 'ruter' }, aktiveKategorier().map((k) => rute(k, registreringer))),
+    el('button', { class: 'tintknapp', onclick: () => apneRegistrering({ dato: new Date() }) },
+      ikon('klokke'), 'Registrer for et annet tidspunkt'),
+    gruppe({ tittel: 'Registrert i dag', kortKlasse: 'liste' },
+      registreringer.length
+        ? registreringer.map(registreringsrad)
+        : rad({ klasse: 'dempet', tekst: 'Ingenting registrert ennå' })),
+  );
+}
 
-  rot.append(el('button', { class: 'lenkeknapp', onclick: () => apneRegistrering({ dato: new Date() }) },
-    '+ Registrer for et annet tidspunkt'));
-
-  rot.append(el('h2', {}, 'Registrert i dag'));
-  rot.append(registreringsliste(registreringer, 'Ingenting registrert i dag.'));
+function rute(kategori, registreringerIdag) {
+  const antall = registreringerIdag.filter((r) => r.kategori === kategori.id).length;
+  return el('button', {
+    class: erLysFarge(kategori.farge) ? 'rute lys' : 'rute',
+    style: fargeStil(kategori.farge),
+    'data-kategori': kategori.id,
+    'aria-label': `${kategori.navn}, ${antall ? `${antall} i dag` : 'ingen i dag'}. Trykk for å registrere nå.`,
+    onclick: () => hurtigRegistrer(kategori),
+  },
+  el('span', { class: 'rute-ikon' }, ikon('pluss', 'ikon-pluss'), ikon('hake', 'ikon-hake')),
+  el('span', {},
+    el('span', { class: 'rute-navn' }, kategori.navn),
+    el('span', { class: 'rute-hint' }, antall ? `${antall} i dag` : 'Ingen i dag')));
 }
 
 function hurtigRegistrer(kategori) {
+  haptisk();
   const naa = new Date();
   const registrering = leggTil(kategori.id, naa);
 
   render();
-  $(`.stor-knapp[data-kategori="${kategori.id}"]`)?.classList.add('registrert');
+  const ruten = $(`.rute[data-kategori="${CSS.escape(kategori.id)}"]`);
+  ruten?.classList.add('registrert');
+  setTimeout(() => ruten?.classList.remove('registrert'), 1400);
 
   visMelding(`${kategori.navn} registrert kl. ${klokke(naa)}`, [
-    { tekst: 'Legg til notat', handling: () => apneNotat(registrering.id) },
+    { tekst: 'Notat', handling: () => apneNotat(registrering.id) },
     {
       tekst: 'Angre',
       handling: () => {
@@ -381,35 +528,27 @@ function hurtigRegistrer(kategori) {
   ]);
 }
 
+function registreringsrad(registrering) {
+  const kategori = kategoriFor(registrering.kategori);
+  const tid = klokke(new Date(registrering.tid));
+  return rad({
+    klasse: 'post',
+    ikon: kategoriIkon(kategori),
+    tekst: kategori.navn,
+    undertekst: registrering.notat || null,
+    verdi: tid,
+    pil: true,
+    aria: `${kategori.navn} kl. ${tid}${registrering.notat ? `, ${registrering.notat}` : ''}. Trykk for å endre.`,
+    onclick: () => apneRegistrering({ registrering }),
+  });
+}
+
 function visInstallasjonstips() {
   const erIos = /iPhone|iPad|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const paaHjemskjerm = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   const iRamme = window.self !== window.top;
   return erIos && !paaHjemskjerm && !iRamme;
-}
-
-// ============================================================
-// Felles byggeklosser
-// ============================================================
-
-function registreringsliste(registreringer, tomTekst) {
-  if (registreringer.length === 0) return el('p', { class: 'tom' }, tomTekst);
-
-  return el('ul', { class: 'liste' }, registreringer.map((r) => {
-    const kategori = kategoriFor(r.kategori);
-    return el('li', {}, el('button', {
-      class: 'post',
-      'aria-label': `${kategori.navn} kl. ${klokke(new Date(r.tid))}. Trykk for å endre.`,
-      onclick: () => apneRegistrering({ registrering: r }),
-    },
-    prikk(kategori),
-    el('span', { class: 'klokke' }, klokke(new Date(r.tid))),
-    el('span', { class: 'innhold' },
-      el('span', {}, kategori.navn),
-      r.notat ? el('span', { class: 'notat' }, r.notat) : null),
-    el('span', { class: 'pil', 'aria-hidden': 'true' }, '›')));
-  }));
 }
 
 // ============================================================
@@ -443,28 +582,27 @@ function renderKalender() {
       onclick: () => { tilstand.valgtDag = nokkel; render(); },
     },
     el('span', { class: 'nr' }, d),
-    el('span', { class: 'prikker' }, vondt.map(prikk)),
-    rolig ? el('span', { class: 'rolig-merke', 'aria-hidden': 'true' }, '✓') : null));
+    el('span', { class: 'merker' }, vondt.map(prikk), rolig ? ikon('hake', 'rolig-merke') : null)));
   }
 
   rot.replaceChildren(
-    el('div', { class: 'maaned-nav' },
-      el('button', { class: 'ikonknapp', 'aria-label': 'Forrige måned', onclick: () => byttMaaned(-1) }, '‹'),
-      el('h2', {}, storForbokstav(fmtMaaned.format(maaned))),
-      el('button', {
-        class: 'ikonknapp', 'aria-label': 'Neste måned', disabled: erDenneMaaneden, onclick: () => byttMaaned(1),
-      }, '›')),
-    el('div', { class: 'ukedager', 'aria-hidden': 'true' },
-      ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø'].map((d) => el('span', {}, d))),
-    el('div', { class: 'kalender' }, dager),
+    el('div', { class: 'kalenderkort' },
+      el('div', { class: 'maaned-nav' },
+        el('h2', {}, storForbokstav(fmtMaaned.format(maaned))),
+        el('div', { class: 'maaned-knapper' },
+          el('button', { 'aria-label': 'Forrige måned', onclick: () => byttMaaned(-1) }, ikon('venstre')),
+          el('button', { 'aria-label': 'Neste måned', disabled: erDenneMaaneden, onclick: () => byttMaaned(1) }, ikon('pil')))),
+      el('div', { class: 'ukedager', 'aria-hidden': 'true' },
+        ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'].map((d) => el('span', {}, d))),
+      el('div', { class: 'kalender' }, dager)),
     el('div', { class: 'forklaring' },
       data.kategorier
         .filter((k) => !k.skjult || antallRegistreringer(k.id) > 0)
         .map((k) => el('span', {}, prikk(k), k.navn)),
-      el('span', {}, el('span', { class: 'rolig-merke' }, '✓'), 'Ingen vondt')),
+      el('span', {}, ikon('hake', 'rolig-merke'), 'Ingen vondt')),
     tilstand.valgtDag
       ? dagDetalj(tilstand.valgtDag)
-      : el('p', { class: 'tom' }, 'Trykk på en dag for å se hva som skjedde.'),
+      : el('p', { class: 'gruppe-fot' }, 'Trykk på en dag for å se hva som skjedde.'),
   );
 }
 
@@ -484,12 +622,22 @@ function dagDetalj(nokkel) {
   const { rolig } = dagStatus(nokkel, registreringer, { iDag, fraDag: forsteDag() });
 
   const nyTid = erIdag ? new Date() : new Date(dato.getFullYear(), dato.getMonth(), dato.getDate(), 12, 0);
-  const tomTekst = rolig ? 'Ingen vondt denne dagen.' : erIdag ? 'Ingenting registrert i dag.' : 'Ingen registreringer denne dagen.';
+  let tomRad = null;
+  if (registreringer.length === 0) {
+    tomRad = rolig
+      ? rad({ ikon: el('span', { class: 'gronn-ikon' }, ikon('hake')), tekst: 'Ingen vondt denne dagen' })
+      : rad({ klasse: 'dempet', tekst: erIdag ? 'Ingenting registrert ennå' : 'Ingen registreringer denne dagen' });
+  }
 
-  return el('section', { class: 'kort dagdetalj', 'aria-label': 'Valgt dag' },
-    el('h3', {}, storForbokstav(fmtDag.format(dato))),
-    registreringsliste(registreringer, tomTekst),
-    el('button', { class: 'lenkeknapp', onclick: () => apneRegistrering({ dato: nyTid }) }, '+ Legg til'));
+  return gruppe({ tittel: storForbokstav(fmtDag.format(dato)), klasse: 'dagdetalj', etikett: 'Valgt dag' },
+    registreringer.map(registreringsrad),
+    tomRad,
+    rad({
+      klasse: 'tint',
+      ikon: el('span', { class: 'tint-ikon' }, ikon('plussSirkel')),
+      tekst: 'Legg til registrering',
+      onclick: () => apneRegistrering({ dato: nyTid }),
+    }));
 }
 
 // ============================================================
@@ -502,20 +650,24 @@ function apneRegistrering({ registrering = null, dato = new Date() } = {}) {
 
   // Kategorier som er fjernet fra startsiden vises bare når du endrer en registrering som har dem.
   const valg = data.kategorier.filter((k) => !k.skjult || k.id === valgtKategori);
-  const kategoriknapper = valg.map((k) => el('button', {
-    type: 'button',
-    style: `--farge:${k.farge}`,
-    'aria-pressed': String(k.id === valgtKategori),
+  const valgrader = valg.map((k) => rad({
+    ikon: kategoriIkon(k),
+    tekst: k.navn,
+    valgt: k.id === valgtKategori,
     onclick: () => {
       valgtKategori = k.id;
-      kategoriknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(valg[i].id === k.id)));
+      valgrader.forEach((r, i) => r.setAttribute('aria-pressed', String(valg[i].id === k.id)));
     },
-  }, prikk(k), k.navn));
+  }));
 
-  const datofelt = el('input', { type: 'date', id: 'felt-dato', value: datoNokkel(tid), max: datoNokkel(new Date()) });
-  const tidsfelt = el('input', { type: 'time', id: 'felt-tid', value: klokke(tid) });
-  const notatfelt = el('textarea', { id: 'felt-notat', rows: '4', placeholder: 'For eksempel: spiste pizza, sov dårlig …' },
-    registrering?.notat ?? '');
+  const datofelt = el('input', {
+    type: 'date', id: 'felt-dato', class: 'pille', value: datoNokkel(tid), max: datoNokkel(new Date()),
+  });
+  const tidsfelt = el('input', { type: 'time', id: 'felt-tid', class: 'pille', value: klokke(tid) });
+  const notatfelt = el('textarea', {
+    id: 'felt-notat', class: 'notatfelt', rows: '4', 'aria-label': 'Notat',
+    placeholder: 'Valgfritt. For eksempel: spiste pizza, sov dårlig …',
+  }, registrering?.notat ?? '');
   const feilmelding = el('p', { class: 'feil', role: 'alert' });
 
   function lagreSkjema() {
@@ -533,6 +685,7 @@ function apneRegistrering({ registrering = null, dato = new Date() } = {}) {
     } else {
       leggTil(valgtKategori, nyTid, notat);
     }
+    haptisk();
     lukkArk();
     render();
     visMelding('Lagret');
@@ -549,20 +702,14 @@ function apneRegistrering({ registrering = null, dato = new Date() } = {}) {
     }]);
   }
 
-  apneArk(
-    el('h2', {}, registrering ? 'Endre registrering' : 'Ny registrering'),
-    el('p', { class: 'felt', id: 'etikett-kategori' }, 'Hva gjorde vondt?'),
-    el('div', { class: 'kategorivalg', role: 'group', 'aria-labelledby': 'etikett-kategori' }, kategoriknapper),
-    el('div', { class: 'to-felt' },
-      el('div', {}, el('label', { class: 'felt', for: 'felt-dato' }, 'Dato'), datofelt),
-      el('div', {}, el('label', { class: 'felt', for: 'felt-tid' }, 'Klokkeslett'), tidsfelt)),
-    el('label', { class: 'felt', for: 'felt-notat' }, 'Notat (valgfritt)'),
-    notatfelt,
+  apneArk({ tittel: registrering ? 'Endre registrering' : 'Ny registrering', lagre: lagreSkjema },
     feilmelding,
-    el('button', { class: 'primaer', onclick: lagreSkjema }, 'Lagre'),
-    registrering ? el('button', { class: 'fareknapp', onclick: slettRegistrering }, 'Slett registreringen') : null,
-    el('button', { class: 'sekundaer', onclick: lukkArk }, 'Avbryt'),
-  );
+    gruppe({ tittel: 'Hva gjorde vondt?', kortKlasse: 'kategorivalg' }, valgrader),
+    gruppe({ tittel: 'Tidspunkt' },
+      el('label', { class: 'rad', for: 'felt-dato' }, el('span', { class: 'rad-tekst' }, 'Dato'), datofelt),
+      el('label', { class: 'rad', for: 'felt-tid' }, el('span', { class: 'rad-tekst' }, 'Klokkeslett'), tidsfelt)),
+    gruppe({ tittel: 'Notat' }, notatfelt),
+    registrering ? gruppe({}, rad({ klasse: 'fare', tekst: 'Slett registrering', onclick: slettRegistrering })) : null);
 }
 
 function apneNotat(id) {
@@ -570,24 +717,21 @@ function apneNotat(id) {
   if (!registrering) return;
   const kategori = kategoriFor(registrering.kategori);
 
-  const notatfelt = el('textarea', { id: 'felt-notat', rows: '4', placeholder: 'For eksempel: spiste pizza, sov dårlig …' },
-    registrering.notat);
+  const notatfelt = el('textarea', {
+    id: 'felt-notat', class: 'notatfelt', rows: '4', 'aria-label': 'Notat',
+    placeholder: 'For eksempel: spiste pizza, sov dårlig …',
+  }, registrering.notat);
 
-  apneArk(
-    el('h2', {}, 'Notat'),
-    el('p', { class: 'hjelp' }, `${kategori.navn} kl. ${klokke(new Date(registrering.tid))}`),
-    notatfelt,
-    el('button', {
-      class: 'primaer',
-      onclick: () => {
-        oppdater(id, { notat: notatfelt.value.trim() });
-        lukkArk();
-        render();
-        visMelding('Notatet er lagret');
-      },
-    }, 'Lagre notat'),
-    el('button', { class: 'sekundaer', onclick: lukkArk }, 'Avbryt'),
-  );
+  apneArk({
+    tittel: 'Notat',
+    lagre: () => {
+      oppdater(id, { notat: notatfelt.value.trim() });
+      lukkArk();
+      render();
+      visMelding('Notatet er lagret');
+    },
+  },
+  gruppe({ tittel: `${kategori.navn} kl. ${klokke(new Date(registrering.tid))}` }, notatfelt));
   notatfelt.focus();
 }
 
@@ -597,22 +741,30 @@ function apneNotat(id) {
 
 function apneKategori(kategori = null) {
   const andre = data.kategorier.filter((k) => k !== kategori);
-  const ledigFarge = FARGER.find((f) => !andre.some((k) => k.farge === f.farge)) ?? FARGER[0];
-  let valgtFarge = kategori?.farge ?? ledigFarge.farge;
+  const ledigFarge = FARGEFORSLAG.find((id) => !andre.some((k) => k.farge === id)) ?? FARGEFORSLAG[0];
+  let valgtFarge = kategori?.farge ?? ledigFarge;
+
+  const stor = el('span', {
+    class: erLysFarge(valgtFarge) ? 'kat-stor lys' : 'kat-stor', style: fargeStil(valgtFarge), 'aria-hidden': 'true',
+  }, forbokstav(kategori?.navn ?? '') || '?');
 
   const navnefelt = el('input', {
-    type: 'text', id: 'felt-kategorinavn', value: kategori?.navn ?? '', maxlength: '24',
-    placeholder: 'For eksempel: Kvalme', autocomplete: 'off',
+    type: 'text', id: 'felt-kategorinavn', class: 'navnefelt', value: kategori?.navn ?? '', maxlength: '24',
+    placeholder: 'Navn, for eksempel Kvalme', autocomplete: 'off',
+    oninput: (e) => { stor.textContent = forbokstav(e.target.value) || '?'; },
   });
+
   const fargeknapper = FARGER.map((f) => el('button', {
     type: 'button',
     class: 'fargevalg',
-    style: `--farge:${f.farge}`,
+    style: fargeStil(f.id),
     'aria-label': f.navn,
-    'aria-pressed': String(f.farge === valgtFarge),
+    'aria-pressed': String(f.id === valgtFarge),
     onclick: () => {
-      valgtFarge = f.farge;
-      fargeknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(FARGER[i].farge === valgtFarge)));
+      valgtFarge = f.id;
+      fargeknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(FARGER[i].id === valgtFarge)));
+      stor.style.cssText = fargeStil(valgtFarge);
+      stor.classList.toggle('lys', erLysFarge(valgtFarge));
     },
   }));
   const feilmelding = el('p', { class: 'feil', role: 'alert' });
@@ -635,83 +787,87 @@ function apneKategori(kategori = null) {
     }
     if (kategori) Object.assign(kategori, { navn, farge: valgtFarge });
     else data.kategorier.push({ id: nyId(), navn, farge: valgtFarge });
+    haptisk();
     ferdig();
   }
 
   const handlinger = [];
+  let forklaring = null;
   if (kategori?.skjult) {
-    handlinger.push(el('button', { class: 'sekundaer', onclick: () => { delete kategori.skjult; ferdig(); } },
-      'Vis på startsiden igjen'));
+    handlinger.push(rad({ klasse: 'tint', tekst: 'Vis på startsiden igjen', onclick: () => { delete kategori.skjult; ferdig(); } }));
   } else if (kategori && antall > 0 && !erSisteAktive) {
-    handlinger.push(
-      el('button', { class: 'fareknapp', onclick: () => { kategori.skjult = true; ferdig(); } }, 'Fjern fra startsiden'),
-      el('p', { class: 'hjelp' }, antall === 1
-        ? 'Registreringen blir liggende i kalenderen.'
-        : `De ${antall} registreringene blir liggende i kalenderen.`));
+    handlinger.push(rad({ klasse: 'fare', tekst: 'Fjern fra startsiden', onclick: () => { kategori.skjult = true; ferdig(); } }));
+    forklaring = antall === 1
+      ? 'Registreringen blir liggende i kalenderen.'
+      : `De ${antall} registreringene blir liggende i kalenderen.`;
   }
   if (kategori && antall === 0 && !erSisteAktive) {
-    handlinger.push(el('button', {
-      class: 'fareknapp',
-      onclick: () => { data.kategorier = andre; ferdig(); },
-    }, 'Slett kategorien'));
+    handlinger.push(rad({ klasse: 'fare', tekst: 'Slett kategori', onclick: () => { data.kategorier = andre; ferdig(); } }));
   }
-  if (erSisteAktive) {
-    handlinger.push(el('p', { class: 'hjelp' }, 'Du må ha minst én kategori på startsiden, så denne kan ikke fjernes.'));
-  }
+  if (erSisteAktive) forklaring = 'Du må ha minst én kategori på startsiden, så denne kan ikke fjernes.';
 
-  apneArk(
-    el('h2', {}, kategori ? 'Endre kategori' : 'Ny kategori'),
-    el('label', { class: 'felt', for: 'felt-kategorinavn' }, 'Navn'),
-    navnefelt,
-    el('p', { class: 'felt', id: 'etikett-farge' }, 'Farge'),
-    el('div', { class: 'fargevalg-rad', role: 'group', 'aria-labelledby': 'etikett-farge' }, fargeknapper),
+  apneArk({ tittel: kategori ? 'Endre kategori' : 'Ny kategori', lukk: apneInnstillinger, lagre: lagreKategori },
     feilmelding,
-    el('button', { class: 'primaer', onclick: lagreKategori }, 'Lagre'),
-    handlinger,
-    el('button', { class: 'sekundaer', onclick: apneInnstillinger }, 'Avbryt'),
-  );
+    el('div', { class: 'kat-topp' },
+      stor,
+      el('label', { class: 'skjult-etikett', for: 'felt-kategorinavn' }, 'Navn'),
+      navnefelt),
+    el('div', { class: 'fargevalg-rad', role: 'group', 'aria-label': 'Farge' }, fargeknapper),
+    handlinger.length || forklaring ? gruppe({ fot: forklaring }, handlinger) : null);
 }
 
 // ============================================================
 // Innstillinger og sikkerhetskopi
 // ============================================================
 
+function sistLagretTekst() {
+  return data.sistBackup
+    ? `Sist lagret ${fmtDatoTid.format(new Date(data.sistBackup))}.`
+    : 'Du har ikke tatt en sikkerhetskopi ennå.';
+}
+
 function apneInnstillinger() {
   const filvelger = el('input', {
     type: 'file',
     hidden: true,
-    onchange: (e) => { if (e.target.files[0]) hentSikkerhetskopi(e.target.files[0]); },
-  });
-  apneArk(
-    el('h2', {}, 'Innstillinger'),
-    el('h3', {}, 'Det du følger med på'),
-    el('ul', { class: 'liste' }, data.kategorier.map((k) => el('li', {}, el('button', {
-      class: 'post',
-      'aria-label': `${k.navn}${k.skjult ? ', ikke på startsiden' : ''}. Trykk for å endre.`,
-      onclick: () => apneKategori(k),
+    onchange: (e) => {
+      const fil = e.target.files[0];
+      e.target.value = ''; // så samme fil kan velges igjen etter «Avbryt»
+      if (fil) hentSikkerhetskopi(fil);
     },
-    prikk(k),
-    el('span', { class: 'innhold' },
-      el('span', {}, k.navn),
-      k.skjult ? el('span', { class: 'notat' }, 'Ikke på startsiden') : null),
-    el('span', { class: 'pil', 'aria-hidden': 'true' }, '›'))))),
-    el('button', { class: 'sekundaer', onclick: () => apneKategori() }, '+ Ny kategori'),
-    el('h3', {}, 'Sikkerhetskopi'),
-    el('p', {}, 'Alt du registrerer ligger bare på denne telefonen. Ta en kopi innimellom, så mister du ingenting hvis du bytter telefon.'),
-    el('p', { class: 'statistikk', id: 'sist-backup' }, data.sistBackup
-      ? `Sist lagret: ${fmtDatoTid.format(new Date(data.sistBackup))}`
-      : 'Sist lagret: aldri'),
-    el('button', { class: 'primaer', onclick: lagreSikkerhetskopi }, 'Lagre sikkerhetskopi'),
-    el('p', { class: 'hjelp', style: 'margin-top:8px' }, 'Velg «Arkiver i Filer» og deretter iCloud Drive.'),
-    el('button', { class: 'sekundaer', onclick: () => filvelger.click() }, 'Hent sikkerhetskopi'),
+  });
+
+  apneArk({ tittel: 'Innstillinger' },
+    gruppe({ tittel: 'Det du følger med på' },
+      data.kategorier.map((k) => rad({
+        klasse: 'post',
+        ikon: kategoriIkon(k),
+        tekst: k.navn,
+        undertekst: k.skjult ? 'Ikke på startsiden' : null,
+        pil: true,
+        aria: `${k.navn}${k.skjult ? ', ikke på startsiden' : ''}. Trykk for å endre.`,
+        onclick: () => apneKategori(k),
+      })),
+      rad({
+        klasse: 'tint',
+        ikon: el('span', { class: 'tint-ikon' }, ikon('plussSirkel')),
+        tekst: 'Ny kategori',
+        onclick: () => apneKategori(),
+      })),
+    gruppe({
+      tittel: 'Sikkerhetskopi',
+      fot: [
+        el('span', { id: 'sist-backup' }, sistLagretTekst()),
+        ' Velg «Arkiver i Filer» og deretter iCloud Drive. Alt du registrerer ligger bare på denne telefonen.',
+      ],
+    },
+    rad({ klasse: 'tint', tekst: 'Lagre sikkerhetskopi', onclick: lagreSikkerhetskopi }),
+    rad({ klasse: 'tint', tekst: 'Hent sikkerhetskopi', onclick: () => filvelger.click() })),
     filvelger,
     el('p', { class: 'feil', role: 'status', id: 'innstillinger-status' }),
-    el('h3', {}, 'Om Dagbok'),
-    el('p', { class: 'statistikk' },
-      `${data.registreringer.length} registreringer · i bruk siden ${fmtDato.format(fraNokkel(forsteDag()))}`),
-    el('p', { class: 'statistikk' }, 'Ingenting blir sendt til internett. Alt blir værende på telefonen din.'),
-    el('button', { class: 'sekundaer', onclick: lukkArk }, 'Lukk'),
-  );
+    gruppe({ tittel: 'Om Dagbok', fot: 'Ingenting blir sendt til internett. Alt blir værende på telefonen din.' },
+      rad({ tekst: 'Registreringer', verdi: String(data.registreringer.length) }),
+      rad({ tekst: 'I bruk siden', verdi: fmtDato.format(fraNokkel(forsteDag())) })));
 }
 
 function lagSikkerhetskopiFil() {
@@ -724,7 +880,7 @@ function merkSikkerhetskopiLaget() {
   data.sistBackup = new Date().toISOString();
   lagre();
   const linje = $('#sist-backup');
-  if (linje) linje.textContent = `Sist lagret: ${fmtDatoTid.format(new Date(data.sistBackup))}`;
+  if (linje) linje.textContent = sistLagretTekst();
   visMelding('Sikkerhetskopien er laget');
 }
 
@@ -767,9 +923,10 @@ async function hentSikkerhetskopi(fil) {
     tittel: 'Hente sikkerhetskopien?',
     tekst: `Kopien har ${ny.registreringer.length} registreringer. Den erstatter alt som ligger i appen nå `
       + `(${data.registreringer.length} registreringer).`,
-    ja: 'Ja, hent kopien',
+    ja: 'Erstatt',
+    fare: true,
   });
-  if (!ok) { apneInnstillinger(); return; }
+  if (!ok) return;
 
   data = ny;
   lagre();
@@ -782,7 +939,7 @@ async function hentSikkerhetskopi(fil) {
 // Oppstart
 // ============================================================
 
-for (const fane of document.querySelectorAll('.faner button')) {
+for (const fane of document.querySelectorAll('.fanelinje button')) {
   fane.addEventListener('click', () => {
     tilstand.visning = fane.dataset.visning;
     render();
@@ -791,6 +948,12 @@ for (const fane of document.querySelectorAll('.faner button')) {
 }
 
 $('#knapp-innstillinger').addEventListener('click', apneInnstillinger);
+
+// Den lille tittelen øverst kommer frem når den store tittelen er blad forbi.
+const navlinje = $('#navlinje');
+new IntersectionObserver(([oppforing]) => {
+  navlinje.classList.toggle('synlig', !oppforing.isIntersecting);
+}, { rootMargin: `-${Math.round(navlinje.getBoundingClientRect().height)}px 0px 0px 0px` }).observe($('#tittel'));
 
 // Når du åpner appen igjen en annen dag, start på dagens dato.
 document.addEventListener('visibilitychange', () => {

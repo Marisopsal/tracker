@@ -1,6 +1,6 @@
 // Gjør at Dagbok virker uten internett.
 // Når appen endres, øk versjonsnummeret under, så henter telefonen den nye versjonen.
-const CACHE = 'dagbok-v1';
+const CACHE = 'dagbok-v2';
 
 const FILER = [
   './',

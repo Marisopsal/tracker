@@ -1,12 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#F6F3EE"/>
-  <rect x="96" y="124" width="320" height="292" rx="44" fill="#FFFFFF" stroke="#1E1B18" stroke-width="20"/>
-  <path d="M96 200h320" stroke="#1E1B18" stroke-width="20"/>
-  <path d="M176 92v64M336 92v64" stroke="#1E1B18" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="176" cy="264" r="26" fill="#E8833A"/>
-  <circle cx="256" cy="264" r="13" fill="#D9D2C7"/>
-  <circle cx="336" cy="264" r="26" fill="#7B6CF0"/>
-  <circle cx="176" cy="344" r="13" fill="#D9D2C7"/>
-  <circle cx="256" cy="344" r="26" fill="#E8833A"/>
-  <circle cx="336" cy="344" r="13" fill="#D9D2C7"/>
+  <defs>
+    <linearGradient id="bakgrunn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E8E8EE"/>
+    </linearGradient>
+    <linearGradient id="oransje" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB340"/>
+      <stop offset="1" stop-color="#FF8A00"/>
+    </linearGradient>
+    <linearGradient id="indigo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7D7AFF"/>
+      <stop offset="1" stop-color="#4F4CCB"/>
+    </linearGradient>
+    <linearGradient id="gronn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5EE07F"/>
+      <stop offset="1" stop-color="#2DB84F"/>
+    </linearGradient>
+    <linearGradient id="gra" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E5E5EA"/>
+      <stop offset="1" stop-color="#D4D4DA"/>
+    </linearGradient>
+    <filter id="skygge" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000" flood-opacity=".14"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bakgrunn)"/>
+  <g>
+    <circle cx="132" cy="132" r="46" fill="url(#gra)"/>
+    <circle cx="256" cy="132" r="46" fill="url(#gra)"/>
+    <circle cx="132" cy="256" r="46" fill="url(#gra)"/>
+    <circle cx="380" cy="256" r="46" fill="url(#gra)"/>
+    <circle cx="132" cy="380" r="46" fill="url(#gra)"/>
+    <circle cx="380" cy="380" r="46" fill="url(#gra)"/>
+  </g>
+  <g filter="url(#skygge)">
+    <circle cx="380" cy="132" r="46" fill="url(#oransje)"/>
+    <circle cx="256" cy="380" r="46" fill="url(#indigo)"/>
+    <circle cx="256" cy="256" r="46" fill="url(#gronn)"/>
+  </g>
+  <path d="M233 257l16 16 30-32" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
