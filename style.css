@@ -483,7 +483,8 @@ h1 {
 
 .forklaring span { display: inline-flex; align-items: center; gap: 6px; }
 
-.dagdetalj .liste { box-shadow: none; background: var(--bg); }
+.dagdetalj .liste,
+.dagdetalj .tom { box-shadow: none; background: var(--bg); }
 .dagdetalj .kort { margin: 0; background: var(--bg); box-shadow: none; }
 .dagdetalj h4 { margin: 20px 0 4px; font-size: 16px; }
 

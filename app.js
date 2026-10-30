@@ -259,6 +259,18 @@ function lukkArk() {
 // Trykk utenfor arket lukker det.
 ark.addEventListener('click', (e) => { if (e.target === ark) lukkArk(); });
 
+// Spør i arket før noe som ikke kan angres. Gir true for ja og false for avbryt.
+function bekreft({ tittel, tekst, ja }) {
+  return new Promise((svar) => {
+    apneArk(
+      el('h2', {}, tittel),
+      el('p', {}, tekst),
+      el('button', { class: 'primaer', onclick: () => svar(true) }, ja),
+      el('button', { class: 'sekundaer', onclick: () => svar(false) }, 'Avbryt'),
+    );
+  });
+}
+
 // ============================================================
 // Skjermtilstand
 // ============================================================
@@ -558,7 +570,6 @@ function apneRegistrering({ registrering = null, dato = new Date() } = {}) {
   }
 
   function slettRegistrering() {
-    if (!confirm('Vil du slette denne registreringen?')) return;
     const kopi = { ...registrering };
     slett(registrering.id);
     lukkArk();
@@ -634,6 +645,7 @@ function apneInnstillinger() {
     el('p', { class: 'hjelp', style: 'margin-top:8px' }, 'Velg «Arkiver i Filer» og deretter iCloud Drive.'),
     el('button', { class: 'sekundaer', onclick: () => filvelger.click() }, 'Hent sikkerhetskopi'),
     filvelger,
+    el('p', { class: 'feil', role: 'status', id: 'innstillinger-status' }),
     el('h3', {}, 'Om Dagbok'),
     el('p', { class: 'statistikk' },
       `${data.registreringer.length} registreringer · ${antallDager} oppsummerte dager`),
@@ -687,13 +699,17 @@ async function hentSikkerhetskopi(fil) {
   try {
     ny = normaliser(JSON.parse(await fil.text()));
   } catch {
-    alert('Denne filen ser ikke ut som en sikkerhetskopi fra Dagbok.');
+    $('#innstillinger-status').textContent = 'Denne filen er ikke en sikkerhetskopi fra Dagbok. Velg en fil som heter «dagbok-sikkerhetskopi-…».';
     return;
   }
 
-  const sporsmaal = `Sikkerhetskopien har ${ny.registreringer.length} registreringer. `
-    + `Den erstatter alt som ligger i appen nå (${data.registreringer.length} registreringer). Vil du fortsette?`;
-  if (!confirm(sporsmaal)) return;
+  const ok = await bekreft({
+    tittel: 'Hente sikkerhetskopien?',
+    tekst: `Kopien har ${ny.registreringer.length} registreringer. Den erstatter alt som ligger i appen nå `
+      + `(${data.registreringer.length} registreringer).`,
+    ja: 'Ja, hent kopien',
+  });
+  if (!ok) { apneInnstillinger(); return; }
 
   data = ny;
   lagre();
