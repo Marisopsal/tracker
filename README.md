@@ -3,8 +3,8 @@
 En enkel app for iPhone der du registrerer når du har vondt i magen eller i hodet, og ser alt i en kalender.
 
 - **Ett trykk** på «Magen» eller «Hodet» lagrer tidspunktet. Du kan legge til et notat hvis du vil.
-- **Om kvelden** (fra kl. 18) spør appen «Hvordan var dagen?». Svarene dine gjør at kalenderen skiller rolige dager fra dager du glemte å registrere.
-- **Kalenderen** viser fargede prikker: oransje for magen, lilla for hodet. En grønn hake betyr en rolig dag. Trykk på en dag for å se, rette eller legge til noe.
+- **Kalenderen** viser fargede prikker: oransje for magen, lilla for hodet. Trykk på en dag for å se, rette eller legge til noe.
+- **Grønn hake** betyr ingen vondt. Hver dag uten registreringer får en hake når dagen er over. Det gjelder fra dagen du begynte å bruke appen.
 - **Alt lagres bare på telefonen din.** Ingenting blir sendt til internett.
 
 ## Slik får du appen på telefonen

@@ -11,9 +11,6 @@ const KATEGORIER = [
   { id: 'hode', navn: 'Hodet', farge: '#7B6CF0' },
 ];
 
-// Fra dette klokkeslettet spør startsiden «Hvordan var dagen?».
-const KVELD_FRA_KLOKKA = 18;
-
 const LAGRINGSNOKKEL = 'dagbok-data';
 const DATAVERSJON = 1;
 
@@ -23,6 +20,7 @@ const DATAVERSJON = 1;
 
 const fmtDag = new Intl.DateTimeFormat('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtMaaned = new Intl.DateTimeFormat('nb-NO', { month: 'long', year: 'numeric' });
+const fmtDato = new Intl.DateTimeFormat('nb-NO', { dateStyle: 'long' });
 const fmtDatoTid = new Intl.DateTimeFormat('nb-NO', { dateStyle: 'long', timeStyle: 'short' });
 
 const tosifret = (tall) => String(tall).padStart(2, '0');
@@ -51,7 +49,7 @@ function forsteIMaaned(dato) {
 // ============================================================
 
 function tomData() {
-  return { versjon: DATAVERSJON, registreringer: [], dager: {}, sistBackup: null };
+  return { versjon: DATAVERSJON, registreringer: [], startet: datoNokkel(new Date()), sistBackup: null };
 }
 
 function nyId() {
@@ -74,19 +72,14 @@ function normaliser(raadata) {
       notat: typeof r.notat === 'string' ? r.notat : '',
     }));
 
-  const dager = {};
-  for (const [nokkel, verdier] of Object.entries(raadata.dager || {})) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nokkel) || !verdier || typeof verdier !== 'object') continue;
-    dager[nokkel] = {};
-    for (const [kategori, verdi] of Object.entries(verdier)) {
-      if (typeof verdi === 'boolean') dager[nokkel][kategori] = verdi;
-    }
-  }
+  // Dagen appen ble tatt i bruk. Mangler den, brukes den tidligste registreringen eller i dag.
+  const tidligste = registreringer.reduce((min, r) => (r.tid < min ? r.tid : min), new Date().toISOString());
+  const startet = /^\d{4}-\d{2}-\d{2}$/.test(raadata.startet) ? raadata.startet : datoNokkel(new Date(tidligste));
 
   return {
     versjon: DATAVERSJON,
     registreringer,
-    dager,
+    startet,
     sistBackup: typeof raadata.sistBackup === 'string' ? raadata.sistBackup : null,
   };
 }
@@ -98,7 +91,12 @@ function lesData() {
   } catch {
     return tomData();
   }
-  if (!tekst) return tomData();
+  if (!tekst) {
+    // Første gang: lagre med en gang, så appen husker hvilken dag du begynte.
+    const ny = tomData();
+    try { localStorage.setItem(LAGRINGSNOKKEL, JSON.stringify(ny)); } catch {}
+    return ny;
+  }
 
   try {
     return normaliser(JSON.parse(tekst));
@@ -151,37 +149,27 @@ function registreringerPaa(nokkel) {
   return registreringerPerDag().get(nokkel) ?? [];
 }
 
-// Hva gjorde vondt denne dagen, og var det en bekreftet rolig dag?
-function dagStatus(nokkel, registreringer) {
-  const oppsummering = data.dager[nokkel];
-  const vondt = KATEGORIER.filter((k) =>
-    registreringer.some((r) => r.kategori === k.id) || oppsummering?.[k.id] === true);
-  return { vondt, rolig: vondt.length === 0 && oppsummering != null };
-}
-
-// Lagret oppsummering hvis den finnes, ellers et forslag ut fra registreringene.
-function forslagTilOppsummering(nokkel) {
-  const registreringer = registreringerPaa(nokkel);
-  const lagret = data.dager[nokkel] ?? {};
-  const verdier = {};
-  for (const k of KATEGORIER) {
-    verdier[k.id] = typeof lagret[k.id] === 'boolean'
-      ? lagret[k.id]
-      : registreringer.some((r) => r.kategori === k.id);
+// Første dag appen har oversikt over: dagen du begynte, eller en tidligere dag du har registrert i etterkant.
+function forsteDag() {
+  let forste = data.startet;
+  for (const r of data.registreringer) {
+    const nokkel = datoNokkel(new Date(r.tid));
+    if (nokkel < forste) forste = nokkel;
   }
-  return verdier;
+  return forste;
 }
 
-// Når en dag allerede er oppsummert, skal en ny registrering den dagen telle med.
-function markerSomVondt(registrering) {
-  const oppsummering = data.dager[datoNokkel(new Date(registrering.tid))];
-  if (oppsummering) oppsummering[registrering.kategori] = true;
+// Hva gjorde vondt denne dagen? En dag uten registreringer er en dag uten vondt,
+// men bare når dagen er over og appen var i bruk.
+function dagStatus(nokkel, registreringer, { iDag, fraDag }) {
+  const vondt = KATEGORIER.filter((k) => registreringer.some((r) => r.kategori === k.id));
+  const rolig = registreringer.length === 0 && nokkel < iDag && nokkel >= fraDag;
+  return { vondt, rolig };
 }
 
 function leggTil(kategori, tid, notat = '') {
   const registrering = { id: nyId(), kategori, tid: tid.toISOString(), notat };
   data.registreringer.push(registrering);
-  markerSomVondt(registrering);
   lagre();
   return registrering;
 }
@@ -190,17 +178,11 @@ function oppdater(id, endringer) {
   const registrering = finnRegistrering(id);
   if (!registrering) return;
   Object.assign(registrering, endringer);
-  markerSomVondt(registrering);
   lagre();
 }
 
 function slett(id) {
   data.registreringer = data.registreringer.filter((r) => r.id !== id);
-  lagre();
-}
-
-function lagreOppsummering(nokkel, verdier) {
-  data.dager[nokkel] = { ...verdier };
   lagre();
 }
 
@@ -280,7 +262,6 @@ const tilstand = {
   dagNaa: datoNokkel(new Date()),
   visMaaned: forsteIMaaned(new Date()),
   valgtDag: datoNokkel(new Date()),
-  endrerKveld: false,
 };
 
 function render() {
@@ -315,20 +296,6 @@ function renderIdag() {
       'Bruk alltid ikonet etterpå – det du registrerer her i Safari blir ikke med.'));
   }
 
-  if (data.dager[nokkel] && !tilstand.endrerKveld) {
-    rot.append(oppsummertLinje(nokkel, registreringer));
-  } else if (naa.getHours() >= KVELD_FRA_KLOKKA || tilstand.endrerKveld) {
-    rot.append(oppsummeringSkjema(nokkel, {
-      tittel: 'Hvordan var dagen?',
-      hjelp: 'Fylt ut etter det du har registrert i dag. Rett opp hvis noe mangler.',
-      etterLagring: () => {
-        tilstand.endrerKveld = false;
-        render();
-        visMelding('Dagen er lagret');
-      },
-    }));
-  }
-
   rot.append(el('div', { class: 'store-knapper' }, KATEGORIER.map((k) =>
     el('button', {
       class: 'stor-knapp',
@@ -348,8 +315,6 @@ function renderIdag() {
 
 function hurtigRegistrer(kategori) {
   const naa = new Date();
-  const nokkel = datoNokkel(naa);
-  const forrigeOppsummering = data.dager[nokkel] ? { ...data.dager[nokkel] } : null;
   const registrering = leggTil(kategori.id, naa);
 
   render();
@@ -361,25 +326,11 @@ function hurtigRegistrer(kategori) {
       tekst: 'Angre',
       handling: () => {
         slett(registrering.id);
-        if (forrigeOppsummering) lagreOppsummering(nokkel, forrigeOppsummering);
         render();
         visMelding('Angret');
       },
     },
   ]);
-}
-
-function oppsummertLinje(nokkel, registreringer) {
-  const { rolig } = dagStatus(nokkel, registreringer);
-  const oppsummering = data.dager[nokkel];
-  const tekst = rolig
-    ? 'Dagen er oppsummert: rolig dag'
-    : 'Dagen er oppsummert: ' + KATEGORIER.map((k) => `${k.navn} ${oppsummering[k.id] ? 'ja' : 'nei'}`).join(' · ');
-
-  return el('div', { class: 'kort oppsummert' },
-    el('span', { class: 'hake', 'aria-hidden': 'true' }, '✓'),
-    el('span', { class: 'tekst' }, tekst),
-    el('button', { class: 'lenkeknapp', onclick: () => { tilstand.endrerKveld = true; render(); } }, 'Endre'));
 }
 
 function visInstallasjonstips() {
@@ -413,37 +364,6 @@ function registreringsliste(registreringer, tomTekst) {
   }));
 }
 
-function jaNeiValg(startverdi, vedEndring) {
-  const ja = el('button', { type: 'button' }, 'Ja');
-  const nei = el('button', { type: 'button' }, 'Nei');
-  const sett = (verdi) => {
-    ja.setAttribute('aria-pressed', String(verdi));
-    nei.setAttribute('aria-pressed', String(!verdi));
-    vedEndring(verdi);
-  };
-  ja.addEventListener('click', () => sett(true));
-  nei.addEventListener('click', () => sett(false));
-  sett(startverdi);
-  return el('div', { class: 'segment', role: 'group' }, ja, nei);
-}
-
-function oppsummeringSkjema(nokkel, { tittel, hjelp, etterLagring }) {
-  const verdier = forslagTilOppsummering(nokkel);
-  const erLagret = Boolean(data.dager[nokkel]);
-
-  return el('div', { class: 'kort' },
-    tittel ? el('h3', {}, tittel) : null,
-    hjelp ? el('p', { class: 'hjelp' }, hjelp) : null,
-    KATEGORIER.map((k) => el('div', { class: 'rad', 'aria-label': k.navn },
-      prikk(k),
-      el('span', { class: 'radnavn' }, k.navn),
-      jaNeiValg(verdier[k.id], (verdi) => { verdier[k.id] = verdi; }))),
-    el('button', {
-      class: 'primaer',
-      onclick: () => { lagreOppsummering(nokkel, verdier); etterLagring(); },
-    }, erLagret ? 'Oppdater dagen' : 'Lagre dagen'));
-}
-
 // ============================================================
 // Kalender
 // ============================================================
@@ -454,6 +374,7 @@ function renderKalender() {
   const maaned = tilstand.visMaaned;
   const erDenneMaaneden = datoNokkel(maaned) === datoNokkel(forsteIMaaned(new Date()));
   const perDag = registreringerPerDag();
+  const fraDag = forsteDag();
 
   const dager = [];
   const tommeFoer = (maaned.getDay() + 6) % 7; // uka starter på mandag
@@ -463,8 +384,8 @@ function renderKalender() {
   for (let d = 1; d <= antallDager; d++) {
     const dato = new Date(maaned.getFullYear(), maaned.getMonth(), d);
     const nokkel = datoNokkel(dato);
-    const { vondt, rolig } = dagStatus(nokkel, perDag.get(nokkel) ?? []);
-    const beskrivelse = vondt.length ? vondt.map((k) => k.navn).join(' og ') : rolig ? 'rolig dag' : '';
+    const { vondt, rolig } = dagStatus(nokkel, perDag.get(nokkel) ?? [], { iDag, fraDag });
+    const beskrivelse = vondt.length ? vondt.map((k) => k.navn).join(' og ') : rolig ? 'ingen vondt' : '';
 
     dager.push(el('button', {
       class: ['dag', nokkel === iDag && 'i-dag', nokkel === tilstand.valgtDag && 'valgt'].filter(Boolean).join(' '),
@@ -490,7 +411,7 @@ function renderKalender() {
     el('div', { class: 'kalender' }, dager),
     el('div', { class: 'forklaring' },
       KATEGORIER.map((k) => el('span', {}, prikk(k), k.navn)),
-      el('span', {}, el('span', { class: 'rolig-merke' }, '✓'), 'Rolig dag')),
+      el('span', {}, el('span', { class: 'rolig-merke' }, '✓'), 'Ingen vondt')),
     tilstand.valgtDag
       ? dagDetalj(tilstand.valgtDag)
       : el('p', { class: 'tom' }, 'Trykk på en dag for å se hva som skjedde.'),
@@ -507,22 +428,18 @@ function byttMaaned(retning) {
 
 function dagDetalj(nokkel) {
   const dato = fraNokkel(nokkel);
-  const erIdag = nokkel === datoNokkel(new Date());
+  const iDag = datoNokkel(new Date());
+  const erIdag = nokkel === iDag;
   const registreringer = registreringerPaa(nokkel);
+  const { rolig } = dagStatus(nokkel, registreringer, { iDag, fraDag: forsteDag() });
 
   const nyTid = erIdag ? new Date() : new Date(dato.getFullYear(), dato.getMonth(), dato.getDate(), 12, 0);
+  const tomTekst = rolig ? 'Ingen vondt denne dagen.' : erIdag ? 'Ingenting registrert i dag.' : 'Ingen registreringer denne dagen.';
 
   return el('section', { class: 'kort dagdetalj', 'aria-label': 'Valgt dag' },
     el('h3', {}, storForbokstav(fmtDag.format(dato))),
-    registreringsliste(registreringer, 'Ingen registreringer denne dagen.'),
-    el('button', { class: 'lenkeknapp', onclick: () => apneRegistrering({ dato: nyTid }) }, '+ Legg til'),
-    el('h4', {}, 'Oppsummering av dagen'),
-    el('p', { class: 'hjelp' }, data.dager[nokkel]
-      ? 'Lagret.'
-      : 'Ikke oppsummert ennå. Forslaget under er laget ut fra registreringene.'),
-    oppsummeringSkjema(nokkel, {
-      etterLagring: () => { render(); visMelding('Oppsummeringen er lagret'); },
-    }));
+    registreringsliste(registreringer, tomTekst),
+    el('button', { class: 'lenkeknapp', onclick: () => apneRegistrering({ dato: nyTid }) }, '+ Legg til'));
 }
 
 // ============================================================
@@ -632,8 +549,6 @@ function apneInnstillinger() {
     hidden: true,
     onchange: (e) => { if (e.target.files[0]) hentSikkerhetskopi(e.target.files[0]); },
   });
-  const antallDager = Object.keys(data.dager).length;
-
   apneArk(
     el('h2', {}, 'Innstillinger'),
     el('h3', {}, 'Sikkerhetskopi'),
@@ -648,7 +563,7 @@ function apneInnstillinger() {
     el('p', { class: 'feil', role: 'status', id: 'innstillinger-status' }),
     el('h3', {}, 'Om Dagbok'),
     el('p', { class: 'statistikk' },
-      `${data.registreringer.length} registreringer · ${antallDager} oppsummerte dager`),
+      `${data.registreringer.length} registreringer · i bruk siden ${fmtDato.format(fraNokkel(forsteDag()))}`),
     el('p', { class: 'statistikk' }, 'Ingenting blir sendt til internett. Alt blir værende på telefonen din.'),
     el('button', { class: 'sekundaer', onclick: lukkArk }, 'Lukk'),
   );
@@ -714,7 +629,6 @@ async function hentSikkerhetskopi(fil) {
   data = ny;
   lagre();
   lukkArk();
-  tilstand.endrerKveld = false;
   render();
   visMelding('Sikkerhetskopien er hentet inn');
 }
@@ -741,7 +655,6 @@ document.addEventListener('visibilitychange', () => {
     tilstand.dagNaa = iDag;
     tilstand.valgtDag = iDag;
     tilstand.visMaaned = forsteIMaaned(new Date());
-    tilstand.endrerKveld = false;
   }
   render();
 });

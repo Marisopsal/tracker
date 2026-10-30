@@ -271,17 +271,6 @@ h1 {
   font-size: 15px;
 }
 
-.oppsummert {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-}
-
-.oppsummert .tekst { flex: 1; font-size: 15px; }
-.oppsummert .lenkeknapp { padding: 6px 0; }
-.hake { color: var(--rolig); font-weight: 800; }
-
 .liste {
   margin: 0;
   padding: 0;
@@ -350,38 +339,7 @@ h1 {
 .sekundaer { background: var(--flate-2); color: var(--tekst); }
 .fareknapp { background: none; color: var(--fare); }
 
-/* Ja/Nei og andre valg */
-
-.rad {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-}
-
-.radnavn { flex: 1; font-weight: 600; }
-
-.segment {
-  display: inline-flex;
-  padding: 3px;
-  border-radius: 12px;
-  background: var(--flate-2);
-}
-
-.segment button {
-  min-width: 64px;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: 9px;
-  background: none;
-  color: var(--dempet);
-  font-weight: 650;
-}
-
-.segment button[aria-pressed="true"] {
-  background: var(--tekst);
-  color: var(--bg);
-}
+/* Valg av hva som gjorde vondt */
 
 .kategorivalg {
   display: flex;
@@ -485,8 +443,7 @@ h1 {
 
 .dagdetalj .liste,
 .dagdetalj .tom { box-shadow: none; background: var(--bg); }
-.dagdetalj .kort { margin: 0; background: var(--bg); box-shadow: none; }
-.dagdetalj h4 { margin: 20px 0 4px; font-size: 16px; }
+.dagdetalj .lenkeknapp { padding-bottom: 0; }
 
 /* ============================================================
    Melding nederst (toast)
