@@ -5,6 +5,7 @@ En enkel app for iPhone der du registrerer når du har vondt i magen eller i hod
 - **Ett trykk** på «Magen» eller «Hodet» lagrer tidspunktet. Du kan legge til et notat hvis du vil.
 - **Kalenderen** viser fargede prikker: oransje for magen, lilla for hodet. Trykk på en dag for å se, rette eller legge til noe.
 - **Grønn hake** betyr ingen vondt. Hver dag uten registreringer får en hake når dagen er over. Det gjelder fra dagen du begynte å bruke appen.
+- **Flere ting å følge med på**, for eksempel kvalme, legger du til selv: tannhjulet → «+ Ny kategori». Velg navn og farge, så kommer det en ny knapp på startsiden. Der kan du også endre navn og farge. Slutter du å følge med på noe, kan du fjerne det fra startsiden. Det du har registrert blir liggende i kalenderen.
 - **Alt lagres bare på telefonen din.** Ingenting blir sendt til internett.
 
 ## Slik får du appen på telefonen
@@ -31,7 +32,7 @@ Appen er vanlig HTML, CSS og JavaScript, uten byggesteg:
 |---|---|
 | `index.html` | Selve siden |
 | `style.css` | Utseende, lys og mørk modus |
-| `app.js` | All logikk. Kategoriene (mage, hode) står øverst i `KATEGORIER`. |
+| `app.js` | All logikk. Kategoriene appen starter med står øverst i `STANDARDKATEGORIER`, og fargene du kan velge mellom står i `FARGER`. |
 | `sw.js` | Gjør at appen virker uten internett. **Øk `CACHE`-versjonen når du endrer noe**, ellers får ikke telefonen den nye versjonen. |
 | `manifest.webmanifest`, `icons/` | Navn og ikon på Hjem-skjermen |
 

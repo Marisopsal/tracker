@@ -4,12 +4,25 @@
 // Oppsett
 // ============================================================
 
-// Det du følger med på. Vil du følge med på noe mer, legg til en linje her,
-// for eksempel: { id: 'kvalme', navn: 'Kvalme', farge: '#2E9E8F' },
-const KATEGORIER = [
+// Det du følger med på når appen tas i bruk. Flere kan legges til i appen under Innstillinger.
+const STANDARDKATEGORIER = [
   { id: 'mage', navn: 'Magen', farge: '#E8833A' },
   { id: 'hode', navn: 'Hodet', farge: '#7B6CF0' },
 ];
+
+// Fargene du kan velge mellom for en kategori.
+const FARGER = [
+  { farge: '#E8833A', navn: 'Oransje' },
+  { farge: '#7B6CF0', navn: 'Lilla' },
+  { farge: '#2A9D8F', navn: 'Turkis' },
+  { farge: '#D9577C', navn: 'Rosa' },
+  { farge: '#3D8BD9', navn: 'Blå' },
+  { farge: '#C9A227', navn: 'Gul' },
+  { farge: '#9A6B4F', navn: 'Brun' },
+  { farge: '#6B7A8F', navn: 'Grå' },
+];
+
+const UKJENT_FARGE = '#9A948C';
 
 const LAGRINGSNOKKEL = 'dagbok-data';
 const DATAVERSJON = 1;
@@ -49,7 +62,13 @@ function forsteIMaaned(dato) {
 // ============================================================
 
 function tomData() {
-  return { versjon: DATAVERSJON, registreringer: [], startet: datoNokkel(new Date()), sistBackup: null };
+  return {
+    versjon: DATAVERSJON,
+    kategorier: STANDARDKATEGORIER.map((k) => ({ ...k })),
+    registreringer: [],
+    startet: datoNokkel(new Date()),
+    sistBackup: null,
+  };
 }
 
 function nyId() {
@@ -72,12 +91,30 @@ function normaliser(raadata) {
       notat: typeof r.notat === 'string' ? r.notat : '',
     }));
 
+  const kategorier = [];
+  for (const k of Array.isArray(raadata.kategorier) ? raadata.kategorier : []) {
+    const gyldig = k && typeof k.id === 'string' && typeof k.navn === 'string' && /^#[0-9a-fA-F]{6}$/.test(k.farge);
+    if (!gyldig || kategorier.some((annen) => annen.id === k.id)) continue;
+    kategorier.push(k.skjult === true
+      ? { id: k.id, navn: k.navn, farge: k.farge, skjult: true }
+      : { id: k.id, navn: k.navn, farge: k.farge });
+  }
+  if (kategorier.length === 0) kategorier.push(...STANDARDKATEGORIER.map((k) => ({ ...k })));
+  // En registrering med en ukjent kategori får en grå kategori, så ingenting forsvinner.
+  for (const r of registreringer) {
+    if (!kategorier.some((k) => k.id === r.kategori)) {
+      kategorier.push({ id: r.kategori, navn: storForbokstav(r.kategori), farge: UKJENT_FARGE });
+    }
+  }
+  if (!kategorier.some((k) => !k.skjult)) delete kategorier[0].skjult;
+
   // Dagen appen ble tatt i bruk. Mangler den, brukes den tidligste registreringen eller i dag.
   const tidligste = registreringer.reduce((min, r) => (r.tid < min ? r.tid : min), new Date().toISOString());
   const startet = /^\d{4}-\d{2}-\d{2}$/.test(raadata.startet) ? raadata.startet : datoNokkel(new Date(tidligste));
 
   return {
     versjon: DATAVERSJON,
+    kategorier,
     registreringer,
     startet,
     sistBackup: typeof raadata.sistBackup === 'string' ? raadata.sistBackup : null,
@@ -122,7 +159,16 @@ let data = lesData();
 // ============================================================
 
 function kategoriFor(id) {
-  return KATEGORIER.find((k) => k.id === id) ?? { id, navn: id, farge: '#9A948C' };
+  return data.kategorier.find((k) => k.id === id) ?? { id, navn: id, farge: UKJENT_FARGE };
+}
+
+// Kategoriene som har knapp på startsiden.
+function aktiveKategorier() {
+  return data.kategorier.filter((k) => !k.skjult);
+}
+
+function antallRegistreringer(kategoriId) {
+  return data.registreringer.filter((r) => r.kategori === kategoriId).length;
 }
 
 function finnRegistrering(id) {
@@ -162,7 +208,7 @@ function forsteDag() {
 // Hva gjorde vondt denne dagen? En dag uten registreringer er en dag uten vondt,
 // men bare når dagen er over og appen var i bruk.
 function dagStatus(nokkel, registreringer, { iDag, fraDag }) {
-  const vondt = KATEGORIER.filter((k) => registreringer.some((r) => r.kategori === k.id));
+  const vondt = data.kategorier.filter((k) => registreringer.some((r) => r.kategori === k.id));
   const rolig = registreringer.length === 0 && nokkel < iDag && nokkel >= fraDag;
   return { vondt, rolig };
 }
@@ -202,7 +248,7 @@ function el(tag, egenskaper = {}, ...barn) {
     else if (navn.startsWith('on')) element.addEventListener(navn.slice(2), verdi);
     else element.setAttribute(navn, verdi === true ? '' : verdi);
   }
-  for (const b of barn.flat()) {
+  for (const b of barn.flat(Infinity)) {
     if (b != null && b !== false) element.append(b);
   }
   return element;
@@ -296,7 +342,9 @@ function renderIdag() {
       'Bruk alltid ikonet etterpå – det du registrerer her i Safari blir ikke med.'));
   }
 
-  rot.append(el('div', { class: 'store-knapper' }, KATEGORIER.map((k) =>
+  // Med mange kategorier blir knappene litt lavere, så alle får plass.
+  const aktive = aktiveKategorier();
+  rot.append(el('div', { class: aktive.length > 2 ? 'store-knapper mange' : 'store-knapper' }, aktive.map((k) =>
     el('button', {
       class: 'stor-knapp',
       style: `--farge:${k.farge}`,
@@ -410,7 +458,9 @@ function renderKalender() {
       ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø'].map((d) => el('span', {}, d))),
     el('div', { class: 'kalender' }, dager),
     el('div', { class: 'forklaring' },
-      KATEGORIER.map((k) => el('span', {}, prikk(k), k.navn)),
+      data.kategorier
+        .filter((k) => !k.skjult || antallRegistreringer(k.id) > 0)
+        .map((k) => el('span', {}, prikk(k), k.navn)),
       el('span', {}, el('span', { class: 'rolig-merke' }, '✓'), 'Ingen vondt')),
     tilstand.valgtDag
       ? dagDetalj(tilstand.valgtDag)
@@ -450,13 +500,15 @@ function apneRegistrering({ registrering = null, dato = new Date() } = {}) {
   const tid = registrering ? new Date(registrering.tid) : dato;
   let valgtKategori = registrering?.kategori ?? null;
 
-  const kategoriknapper = KATEGORIER.map((k) => el('button', {
+  // Kategorier som er fjernet fra startsiden vises bare når du endrer en registrering som har dem.
+  const valg = data.kategorier.filter((k) => !k.skjult || k.id === valgtKategori);
+  const kategoriknapper = valg.map((k) => el('button', {
     type: 'button',
     style: `--farge:${k.farge}`,
     'aria-pressed': String(k.id === valgtKategori),
     onclick: () => {
       valgtKategori = k.id;
-      kategoriknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(KATEGORIER[i].id === k.id)));
+      kategoriknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(valg[i].id === k.id)));
     },
   }, prikk(k), k.navn));
 
@@ -540,6 +592,87 @@ function apneNotat(id) {
 }
 
 // ============================================================
+// Skjema: ny eller endre kategori
+// ============================================================
+
+function apneKategori(kategori = null) {
+  const andre = data.kategorier.filter((k) => k !== kategori);
+  const ledigFarge = FARGER.find((f) => !andre.some((k) => k.farge === f.farge)) ?? FARGER[0];
+  let valgtFarge = kategori?.farge ?? ledigFarge.farge;
+
+  const navnefelt = el('input', {
+    type: 'text', id: 'felt-kategorinavn', value: kategori?.navn ?? '', maxlength: '24',
+    placeholder: 'For eksempel: Kvalme', autocomplete: 'off',
+  });
+  const fargeknapper = FARGER.map((f) => el('button', {
+    type: 'button',
+    class: 'fargevalg',
+    style: `--farge:${f.farge}`,
+    'aria-label': f.navn,
+    'aria-pressed': String(f.farge === valgtFarge),
+    onclick: () => {
+      valgtFarge = f.farge;
+      fargeknapper.forEach((knapp, i) => knapp.setAttribute('aria-pressed', String(FARGER[i].farge === valgtFarge)));
+    },
+  }));
+  const feilmelding = el('p', { class: 'feil', role: 'alert' });
+
+  const antall = kategori ? antallRegistreringer(kategori.id) : 0;
+  const erSisteAktive = Boolean(kategori) && !kategori.skjult && aktiveKategorier().length === 1;
+
+  function ferdig() {
+    lagre();
+    render();
+    apneInnstillinger();
+  }
+
+  function lagreKategori() {
+    const navn = navnefelt.value.trim();
+    if (!navn) { feilmelding.textContent = 'Skriv et navn.'; return; }
+    if (andre.some((k) => k.navn.toLowerCase() === navn.toLowerCase())) {
+      feilmelding.textContent = `Du har allerede «${navn}». Velg et annet navn.`;
+      return;
+    }
+    if (kategori) Object.assign(kategori, { navn, farge: valgtFarge });
+    else data.kategorier.push({ id: nyId(), navn, farge: valgtFarge });
+    ferdig();
+  }
+
+  const handlinger = [];
+  if (kategori?.skjult) {
+    handlinger.push(el('button', { class: 'sekundaer', onclick: () => { delete kategori.skjult; ferdig(); } },
+      'Vis på startsiden igjen'));
+  } else if (kategori && antall > 0 && !erSisteAktive) {
+    handlinger.push(
+      el('button', { class: 'fareknapp', onclick: () => { kategori.skjult = true; ferdig(); } }, 'Fjern fra startsiden'),
+      el('p', { class: 'hjelp' }, antall === 1
+        ? 'Registreringen blir liggende i kalenderen.'
+        : `De ${antall} registreringene blir liggende i kalenderen.`));
+  }
+  if (kategori && antall === 0 && !erSisteAktive) {
+    handlinger.push(el('button', {
+      class: 'fareknapp',
+      onclick: () => { data.kategorier = andre; ferdig(); },
+    }, 'Slett kategorien'));
+  }
+  if (erSisteAktive) {
+    handlinger.push(el('p', { class: 'hjelp' }, 'Du må ha minst én kategori på startsiden, så denne kan ikke fjernes.'));
+  }
+
+  apneArk(
+    el('h2', {}, kategori ? 'Endre kategori' : 'Ny kategori'),
+    el('label', { class: 'felt', for: 'felt-kategorinavn' }, 'Navn'),
+    navnefelt,
+    el('p', { class: 'felt', id: 'etikett-farge' }, 'Farge'),
+    el('div', { class: 'fargevalg-rad', role: 'group', 'aria-labelledby': 'etikett-farge' }, fargeknapper),
+    feilmelding,
+    el('button', { class: 'primaer', onclick: lagreKategori }, 'Lagre'),
+    handlinger,
+    el('button', { class: 'sekundaer', onclick: apneInnstillinger }, 'Avbryt'),
+  );
+}
+
+// ============================================================
 // Innstillinger og sikkerhetskopi
 // ============================================================
 
@@ -551,6 +684,18 @@ function apneInnstillinger() {
   });
   apneArk(
     el('h2', {}, 'Innstillinger'),
+    el('h3', {}, 'Det du følger med på'),
+    el('ul', { class: 'liste' }, data.kategorier.map((k) => el('li', {}, el('button', {
+      class: 'post',
+      'aria-label': `${k.navn}${k.skjult ? ', ikke på startsiden' : ''}. Trykk for å endre.`,
+      onclick: () => apneKategori(k),
+    },
+    prikk(k),
+    el('span', { class: 'innhold' },
+      el('span', {}, k.navn),
+      k.skjult ? el('span', { class: 'notat' }, 'Ikke på startsiden') : null),
+    el('span', { class: 'pil', 'aria-hidden': 'true' }, '›'))))),
+    el('button', { class: 'sekundaer', onclick: () => apneKategori() }, '+ Ny kategori'),
     el('h3', {}, 'Sikkerhetskopi'),
     el('p', {}, 'Alt du registrerer ligger bare på denne telefonen. Ta en kopi innimellom, så mister du ingenting hvis du bytter telefon.'),
     el('p', { class: 'statistikk', id: 'sist-backup' }, data.sistBackup
@@ -570,7 +715,7 @@ function apneInnstillinger() {
 }
 
 function lagSikkerhetskopiFil() {
-  const innhold = { app: 'Dagbok', laget: new Date().toISOString(), kategorier: KATEGORIER, ...data };
+  const innhold = { app: 'Dagbok', laget: new Date().toISOString(), ...data };
   const filnavn = `dagbok-sikkerhetskopi-${datoNokkel(new Date())}.json`;
   return new File([JSON.stringify(innhold, null, 2)], filnavn, { type: 'application/json' });
 }

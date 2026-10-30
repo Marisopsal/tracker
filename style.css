@@ -212,6 +212,13 @@ h1 {
   color: var(--dempet);
 }
 
+.stor-knapp > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+
+.store-knapper.mange .stor-knapp { min-height: 76px; padding: 14px 18px; gap: 14px; }
+.store-knapper.mange .stor-knapp .prikk { width: 34px; height: 34px; }
+.store-knapper.mange .stor-knapp .navn { font-size: 23px; }
+.store-knapper.mange .stor-knapp .hint { display: none; }
+
 .stor-knapp.registrert { animation: registrert .7s ease-out; }
 
 @keyframes registrert {
@@ -362,6 +369,27 @@ h1 {
   border-color: var(--farge);
   background: color-mix(in srgb, var(--farge) 16%, var(--flate));
 }
+
+.fargevalg-rad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fargevalg {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--farge);
+}
+
+.fargevalg[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--tekst);
+}
+
+.ark .liste + .sekundaer { margin-top: 10px; }
 
 /* ============================================================
    Kalender
@@ -515,12 +543,13 @@ h1 {
 .ark h3 { margin: 24px 0 6px; font-size: 17px; }
 .ark p { margin: 0 0 8px; }
 
-.felt {
+.ark .felt {
   display: block;
   margin: 18px 0 8px;
   font-weight: 650;
 }
 
+.ark input[type="text"],
 .ark input[type="date"],
 .ark input[type="time"],
 .ark textarea {
